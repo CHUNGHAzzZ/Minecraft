@@ -1,0 +1,93 @@
+# 构建输出目录
+build/
+out/
+bin/
+lib/
+
+# Visual Studio 生成的文件
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio 临时文件
+.vs/
+*.tmp
+*.temp
+
+# CMake 生成的文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# 编译生成的文件
+*.obj
+*.o
+*.exe
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
+
+# 调试文件
+*.pdb
+*.ilk
+*.exp
+
+# 日志文件
+*.log
+*.tlog
+
+# 临时文件
+*.tmp
+*.temp
+*~
+.DS_Store
+Thumbs.db
+
+# IDE 配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 备份文件
+*.bak
+*.backup
+*.old
+
+# 测试文件
+test_*.obj
+test_*.exe
+
+# 项目特定的忽略文件
+# 构建脚本生成的临时文件
+*.recipe
+*.lastbuildstate
+generate.stamp*
+cmake.check_cache
+CMakeConfigureLog.yaml
+
+# 编译中间文件
+*.tlog
+*.obj
+*.pch
+
+# 第三方库的DLL文件（如果不想提交的话）
+# third_party/*/lib/*.dll
