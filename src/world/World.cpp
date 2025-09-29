@@ -1,5 +1,7 @@
 #include "World.h"
 #include "../utils/Logger.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
 namespace Minecraft {
@@ -29,19 +31,90 @@ bool World::Initialize() {
 }
 
 void World::Update(float deltaTime) {
-    // TODO: 实现世界更新逻辑
-    // 包括区块加载/卸载、实体更新等
+    if (!m_initialized) {
+        return;
+    }
+    
+    // 这里应该根据玩家位置加载区块
+    // 暂时先加载玩家周围的几个区块用于测试
+    static bool initialChunksLoaded = false;
+    if (!initialChunksLoaded) {
+        Logger::Info("Loading initial chunks around player...");
+        
+        // 加载玩家周围的区块 (0,0) 到 (2,2)
+        for (int x = 0; x < 3; x++) {
+            for (int z = 0; z < 3; z++) {
+                LoadChunk(x, z);
+            }
+        }
+        
+        initialChunksLoaded = true;
+        Logger::Info("Initial chunks loaded");
+    }
 }
 
 void World::Render(Renderer& renderer, const Camera& camera) {
-    // TODO: 实现世界渲染
+    // 获取摄像机位置用于距离剔除
+    glm::vec3 cameraPos = camera.GetPosition();
+    
+    // 获取视图和投影矩阵
+    glm::mat4 viewMatrix = camera.GetViewMatrix();
+    glm::mat4 projectionMatrix = camera.GetProjectionMatrix();
+    
     // 遍历所有加载的区块并渲染
     for (const auto& pair : m_chunks) {
         const auto& chunk = pair.second;
-        if (chunk && chunk->IsGenerated() && chunk->GetMesh()) {
-            // 渲染区块网格
-            chunk->GetMesh()->Render();
+        
+        // 首先检查chunk是否为空
+        if (!chunk) {
+            Logger::Warning("Found null chunk in world");
+            continue;
         }
+        
+        // 获取区块世界位置
+        glm::ivec2 chunkPos = chunk->GetPosition();
+        
+        // 检查区块是否已生成且有网格数据
+        if (!chunk->IsGenerated() || !chunk->GetMesh()) {
+            Logger::Debug("Skipping chunk at (" + std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.y) + ") - not generated or no mesh");
+            continue;
+        }
+        
+        // 检查网格是否有数据
+        if (!chunk->GetMesh()->HasData()) {
+            Logger::Debug("Skipping chunk at (" + std::to_string(chunkPos.x) + ", " + std::to_string(chunkPos.y) + ") - empty mesh");
+            continue;
+        }
+        glm::vec3 chunkWorldPos(
+            chunkPos.x * Chunk::CHUNK_SIZE,
+            0.0f,  // Y坐标暂时设为0，实际应该根据地形高度计算
+            chunkPos.y * Chunk::CHUNK_SIZE
+        );
+        
+        // 距离剔除：检查区块是否在渲染距离内
+        float distance = glm::length(cameraPos - chunkWorldPos);
+        float maxRenderDistance = m_renderDistance * Chunk::CHUNK_SIZE;
+        
+        if (distance > maxRenderDistance) {
+            continue;
+        }
+        
+        // 视锥体剔除：检查区块是否在摄像机视野内
+        // 这里使用简化的视锥体剔除，实际应该使用更精确的算法
+        glm::vec3 chunkCenter = chunkWorldPos + glm::vec3(Chunk::CHUNK_SIZE * 0.5f, Chunk::CHUNK_HEIGHT * 0.5f, Chunk::CHUNK_SIZE * 0.5f);
+        float chunkDistance = glm::length(cameraPos - chunkCenter);
+        
+        // 简单的距离检查，实际应该使用更复杂的视锥体剔除
+        if (chunkDistance > maxRenderDistance * 1.5f) {
+            continue;
+        }
+        
+        // 计算模型矩阵（区块位置变换）
+        glm::mat4 modelMatrix = glm::translate(glm::mat4(1.0f), chunkWorldPos);
+        
+        // 使用渲染器的RenderMesh方法进行渲染
+        // 这会自动设置着色器参数并渲染网格
+        renderer.RenderMesh(chunk->GetMesh().get(), modelMatrix, viewMatrix, projectionMatrix);
     }
 }
 

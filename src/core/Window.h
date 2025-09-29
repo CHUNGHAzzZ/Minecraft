@@ -2,6 +2,7 @@
 
 #include <string>
 #include "../graphics/OpenGL.h"
+#include "../player/Player.h"
 
 namespace Minecraft {
 
@@ -80,12 +81,21 @@ private:
      */
     static void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 
+public:
+    /**
+     * 设置全局Player实例（用于回调函数访问）
+     */
+    static void SetGlobalPlayer(Player* player);
+
 private:
     GLFWwindow* m_window;
     int m_width;
     int m_height;
     std::string m_title;
     bool m_initialized;
+    
+    // 全局Player实例（用于回调函数）
+    static Player* s_globalPlayer;
 };
 
 } // namespace Minecraft

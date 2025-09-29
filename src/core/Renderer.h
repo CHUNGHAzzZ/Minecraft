@@ -80,6 +80,25 @@ public:
      */
     void SetProjectionMatrix(const glm::mat4& projection);
 
+    /**
+     * 获取基础着色器
+     */
+    Shader* GetBasicShader() const { return m_basicShader.get(); }
+
+    /**
+     * 获取UI着色器
+     */
+    Shader* GetUIShader() const { return m_uiShader.get(); }
+
+    /**
+     * 渲染网格（使用基础着色器）
+     * @param mesh 要渲染的网格
+     * @param modelMatrix 模型矩阵
+     * @param viewMatrix 视图矩阵
+     * @param projectionMatrix 投影矩阵
+     */
+    void RenderMesh(Mesh* mesh, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix);
+
 private:
     /**
      * 初始化OpenGL状态
@@ -91,9 +110,15 @@ private:
      */
     bool CreateBasicShaders();
 
+    /**
+     * 创建默认纹理
+     */
+    bool CreateDefaultTexture();
+
 private:
     std::unique_ptr<Shader> m_basicShader;
     std::unique_ptr<Shader> m_uiShader;
+    std::unique_ptr<Texture> m_defaultTexture;
 
     glm::mat4 m_projectionMatrix;
     glm::mat4 m_viewMatrix;

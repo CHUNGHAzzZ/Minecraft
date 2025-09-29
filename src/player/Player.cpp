@@ -149,6 +149,16 @@ void Player::HandleMouseInput(float deltaTime) {
         // 更新摄像机旋转
         m_camera.SetRotation(m_rotation);
     }
+    
+    // 处理鼠标滚轮输入（调整移动速度）
+    float scrollDelta = m_input.GetMouseScrollDelta();
+    if (scrollDelta != 0.0f) {
+        // 滚轮向上增加速度，向下减少速度
+        m_moveSpeed += scrollDelta * 0.5f;
+        m_moveSpeed = std::clamp(m_moveSpeed, 1.0f, 20.0f); // 限制速度范围
+        
+        Logger::Debug("Move speed changed to: " + std::to_string(m_moveSpeed));
+    }
 }
 
 void Player::UpdateCamera() {

@@ -49,10 +49,19 @@ void WorldGenerator::GenerateChunk(Chunk& chunk) {
             int heightIndex = z * Chunk::CHUNK_SIZE + x;
             int terrainHeight = heightMap[heightIndex];
 
+            int blocksPlaced = 0;
             for (int y = 0; y < Chunk::CHUNK_HEIGHT; y++) {
                 BlockType blockType = GetBlockType(worldX, y, worldZ, terrainHeight);
                 Block block(blockType);
                 chunk.SetBlock(x, y, z, block);
+                
+                if (!block.IsAir()) {
+                    blocksPlaced++;
+                }
+            }
+            
+            if (blocksPlaced > 0) {
+                Logger::Debug("Placed " + std::to_string(blocksPlaced) + " blocks at world position (" + std::to_string(worldX) + ", " + std::to_string(worldZ) + ") with height " + std::to_string(terrainHeight));
             }
 
             // 生成树
@@ -80,6 +89,8 @@ void WorldGenerator::SetSeed(int seed) {
 std::vector<int> WorldGenerator::GenerateHeightMap(int chunkX, int chunkZ) {
     std::vector<int> heightMap(Chunk::CHUNK_AREA);
     
+    int maxHeight = 0;
+    int minHeight = 1000;
     for (int x = 0; x < Chunk::CHUNK_SIZE; x++) {
         for (int z = 0; z < Chunk::CHUNK_SIZE; z++) {
             int worldX = chunkX * Chunk::CHUNK_SIZE + x;
@@ -87,8 +98,13 @@ std::vector<int> WorldGenerator::GenerateHeightMap(int chunkX, int chunkZ) {
             
             int height = GetTerrainHeight(worldX, worldZ);
             heightMap[z * Chunk::CHUNK_SIZE + x] = height;
+            
+            if (height > maxHeight) maxHeight = height;
+            if (height < minHeight) minHeight = height;
         }
     }
+    
+    Logger::Debug("Chunk height range: " + std::to_string(minHeight) + " to " + std::to_string(maxHeight));
     
     return heightMap;
 }

@@ -4,6 +4,9 @@
 
 namespace Minecraft {
 
+// 静态成员变量定义
+Player* Window::s_globalPlayer = nullptr;
+
 Window::Window() 
     : m_window(nullptr)
     , m_width(0)
@@ -121,16 +124,22 @@ void Window::KeyCallback(GLFWwindow* window, int key, int scancode, int action, 
 
 void Window::MouseCallback(GLFWwindow* window, double xpos, double ypos) {
     Window* win = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (win) {
-        // 鼠标移动处理将在Player类中实现
+    if (win && s_globalPlayer) {
+        // 将鼠标移动传递给Player的Input系统
+        s_globalPlayer->GetInput().SetMousePositionCallback(window, xpos, ypos);
     }
 }
 
 void Window::ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     Window* win = static_cast<Window*>(glfwGetWindowUserPointer(window));
-    if (win) {
-        // 滚轮处理将在Player类中实现
+    if (win && s_globalPlayer) {
+        // 将鼠标滚轮传递给Player的Input系统
+        s_globalPlayer->GetInput().SetMouseScrollCallback(window, xoffset, yoffset);
     }
+}
+
+void Window::SetGlobalPlayer(Player* player) {
+    s_globalPlayer = player;
 }
 
 } // namespace Minecraft

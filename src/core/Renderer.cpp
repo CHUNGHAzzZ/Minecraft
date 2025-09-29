@@ -2,6 +2,10 @@
 #include "../graphics/Shader.h"
 #include "../utils/Logger.h"
 #include "../graphics/OpenGL.h"
+#include "../graphics/Mesh.h"
+#include "../graphics/Texture.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Minecraft {
 
@@ -36,6 +40,12 @@ bool Renderer::Initialize() {
     // 创建基础着色器
     if (!CreateBasicShaders()) {
         Logger::Error("Failed to create basic shaders");
+        return false;
+    }
+
+    // 创建默认纹理
+    if (!CreateDefaultTexture()) {
+        Logger::Error("Failed to create default texture");
         return false;
     }
 
@@ -138,75 +148,83 @@ void Renderer::InitializeOpenGLState() {
 }
 
 bool Renderer::CreateBasicShaders() {
-    // 基础顶点着色器源码
-    const char* vertexShaderSource = R"(
-        #version 330 core
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec2 aTexCoord;
-        layout (location = 2) in vec3 aNormal;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        out vec2 TexCoord;
-        out vec3 Normal;
-        out vec3 FragPos;
-
-        void main() {
-            FragPos = vec3(model * vec4(aPos, 1.0));
-            Normal = mat3(transpose(inverse(model))) * aNormal;
-            TexCoord = aTexCoord;
-            
-            gl_Position = projection * view * vec4(FragPos, 1.0);
-        }
-    )";
-
-    // 基础片段着色器源码
-    const char* fragmentShaderSource = R"(
-        #version 330 core
-        in vec2 TexCoord;
-        in vec3 Normal;
-        in vec3 FragPos;
-
-        uniform sampler2D texture1;
-        uniform vec3 lightPos;
-        uniform vec3 lightColor;
-        uniform vec3 viewPos;
-
-        out vec4 FragColor;
-
-        void main() {
-            // 环境光
-            float ambientStrength = 0.1;
-            vec3 ambient = ambientStrength * lightColor;
-
-            // 漫反射
-            vec3 norm = normalize(Normal);
-            vec3 lightDir = normalize(lightPos - FragPos);
-            float diff = max(dot(norm, lightDir), 0.0);
-            vec3 diffuse = diff * lightColor;
-
-            // 镜面反射
-            float specularStrength = 0.5;
-            vec3 viewDir = normalize(viewPos - FragPos);
-            vec3 reflectDir = reflect(-lightDir, norm);
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-            vec3 specular = specularStrength * spec * lightColor;
-
-            vec3 result = (ambient + diffuse + specular);
-            FragColor = texture(texture1, TexCoord) * vec4(result, 1.0);
-        }
-    )";
-
+    // 从GLSL文件加载着色器
     m_basicShader = std::make_unique<Shader>();
-    if (!m_basicShader->LoadFromSource(vertexShaderSource, fragmentShaderSource)) {
-        Logger::Error("Failed to create basic shader");
+    if (!m_basicShader->LoadFromFile("assets/shaders/vertex.glsl", "assets/shaders/fragment.glsl")) {
+        Logger::Error("Failed to create basic shader from files");
         return false;
     }
 
-    Logger::Info("Basic shaders created successfully");
+    Logger::Info("Basic shaders loaded from files successfully");
     return true;
+}
+
+bool Renderer::CreateDefaultTexture() {
+    Logger::Info("Creating default texture...");
+    
+    m_defaultTexture = std::make_unique<Texture>();
+    
+    // 尝试从文件加载默认纹理
+    if (m_defaultTexture->LoadFromFile("assets/textures/default_texture.png")) {
+        Logger::Info("Default texture loaded from file successfully");
+        return true;
+    }
+    
+    // 如果文件加载失败，创建一个简单的程序化纹理
+    Logger::Warning("Failed to load default texture from file, creating procedural texture");
+    
+    // 创建一个简单的白色纹理
+    unsigned char whiteTexture[4] = {255, 255, 255, 255}; // RGBA
+    if (m_defaultTexture->LoadFromMemory(whiteTexture, 1, 1, 4)) {
+        Logger::Info("Procedural default texture created successfully");
+        return true;
+    }
+    
+    Logger::Error("Failed to create default texture");
+    return false;
+}
+
+void Renderer::RenderMesh(Mesh* mesh, const glm::mat4& modelMatrix, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix) {
+    if (!mesh) {
+        Logger::Warning("Renderer::RenderMesh called with null mesh");
+        return;
+    }
+    
+    if (!m_basicShader) {
+        Logger::Error("Renderer::RenderMesh called with null shader");
+        return;
+    }
+
+    if (!mesh->HasData()) {
+        Logger::Warning("Renderer::RenderMesh called with empty mesh");
+        return;
+    }
+
+    Logger::Debug("Rendering mesh with " + std::to_string(mesh->GetVertexCount()) + " vertices");
+
+    // 使用基础着色器
+    m_basicShader->Use();
+
+    // 设置MVP矩阵
+    m_basicShader->SetMat4("model", modelMatrix);
+    m_basicShader->SetMat4("view", viewMatrix);
+    m_basicShader->SetMat4("projection", projectionMatrix);
+
+    // 设置光照参数（使用默认值）
+    m_basicShader->SetVec3("lightPos", glm::vec3(100.0f, 100.0f, 100.0f));
+    m_basicShader->SetVec3("lightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+    m_basicShader->SetVec3("viewPos", glm::vec3(0.0f, 0.0f, 0.0f)); // 这里应该使用摄像机位置
+
+    // 绑定默认纹理（如果存在）
+    if (m_defaultTexture) {
+        m_defaultTexture->Bind(0);
+        m_basicShader->SetInt("texture1", 0);
+    } else {
+        Logger::Warning("No default texture available for rendering");
+    }
+
+    // 渲染网格
+    mesh->Render();
 }
 
 } // namespace Minecraft

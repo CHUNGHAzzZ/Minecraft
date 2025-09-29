@@ -2,11 +2,13 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 #include <glm/glm.hpp>
 #include "Block.h"
 
 namespace Minecraft {
 class Mesh;
+struct Vertex;
 
 /**
  * 区块类
@@ -119,6 +121,29 @@ private:
      * @return 块引用，如果超出范围返回空气
      */
     const Block& GetBlockFromWorld(int x, int y, int z) const;
+
+    /**
+     * 为方块面添加顶点数据
+     * @param vertices 顶点数组
+     * @param indices 索引数组
+     * @param x 本地X坐标
+     * @param y Y坐标
+     * @param z 本地Z坐标
+     * @param face 面方向
+     * @param vertexIndex 当前顶点索引
+     */
+    void AddFaceVertices(std::vector<Vertex>& vertices, std::vector<unsigned int>& indices, 
+                        int x, int y, int z, BlockFace face, unsigned int vertexIndex) const;
+
+    /**
+     * 获取面的纹理坐标
+     */
+    glm::vec2 GetFaceTexCoord(BlockFace face, int vertexIndex) const;
+
+    /**
+     * 获取面的法向量
+     */
+    glm::vec3 GetFaceNormal(BlockFace face) const;
 
 private:
     std::array<Block, CHUNK_VOLUME> m_blocks;

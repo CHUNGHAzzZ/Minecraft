@@ -6,10 +6,10 @@
 #include "Chunk.h"
 #include "WorldGenerator.h"
 #include "../graphics/Mesh.h"
+#include "../player/camera.h"
+#include "../core/Renderer.h"
 
 namespace Minecraft {
-class Renderer;
-class Camera;
 
 /**
  * 世界类

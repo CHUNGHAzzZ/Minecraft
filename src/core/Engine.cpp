@@ -28,7 +28,7 @@ bool Engine::Initialize() {
 
     // 创建窗口
     m_window = std::make_unique<Window>();
-    if (!m_window->Initialize(1280, 720, "Minecraft Framework")) {
+    if (!m_window->Initialize(1280, 720, "Minecraft")) {
         Logger::Error("Failed to initialize window");
         return false;
     }
@@ -53,6 +53,9 @@ bool Engine::Initialize() {
         Logger::Error("Failed to initialize player");
         return false;
     }
+    
+    // 设置全局Player实例供Window回调使用
+    Window::SetGlobalPlayer(m_player.get());
 
     m_initialized = true;
     m_running = true;
