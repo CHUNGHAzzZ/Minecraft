@@ -1,93 +1,86 @@
-# 构建输出目录
-build/
-out/
-bin/
-lib/
-
-# Visual Studio 生成的文件
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
-*.sln
-*.suo
+# Qt Creator
+*.pro.user
 *.user
-*.userosscache
-*.sln.docstates
+CMakeLists.txt.user
 
-# Visual Studio 临时文件
-.vs/
-*.tmp
-*.temp
+# IDEs
+.vscode/
+.vscode
+/.vs
+.idea/
 
-# CMake 生成的文件
+# Build directories
+/build/Minecraft/
+/build/MinecraftSymbols/
+/test/mainporject
+
+# Build artifacts
+build/.cmake
+build/.qt
+build/bin
+build/CMakeFiles
+build/src
+build/*.vcxproj*
+build/CMakeCache.txt
+build/*.sln
+build/*.cmake
+build/win_copy.bat
+build/win_run*
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# CMake
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
-Makefile
-*.cmake
+install_manifest.txt
 
-# 编译生成的文件
-*.obj
-*.o
-*.exe
-*.dll
-*.lib
-*.a
-*.so
-*.dylib
+# Visual Studio
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+.vs/
+x64/
+/x64
+Debug/
+Release/
+ipch/
 
-# 调试文件
-*.pdb
-*.ilk
-*.exp
-
-# 日志文件
+# Temporary files
 *.log
-*.tlog
-
-# 临时文件
 *.tmp
-*.temp
-*~
-.DS_Store
-Thumbs.db
-
-# IDE 配置文件
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# 系统文件
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# 备份文件
 *.bak
-*.backup
-*.old
+*.swp
+*~
 
-# 测试文件
-test_*.obj
-test_*.exe
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# 项目特定的忽略文件
-# 构建脚本生成的临时文件
-*.recipe
-*.lastbuildstate
-generate.stamp*
-cmake.check_cache
-CMakeConfigureLog.yaml
+# Dependencies (if needed, uncomment)
+# 3rdparty/libc*/*
 
-# 编译中间文件
-*.tlog
-*.obj
-*.pch
+# Documentation
+/src/html
+/src/Doxyfile
 
-# 第三方库的DLL文件（如果不想提交的话）
-# third_party/*/lib/*.dll
+# Package managers
+packages
+
+# Generated MOC files
+/src/client/.moc
+*.moc
+moc_*.cpp
+ui_*.h
+qrc_*.cpp

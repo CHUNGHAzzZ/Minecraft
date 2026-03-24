@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<contain>
+    <ref_node id="auto_orient_entry" enabled="1" name="自动定向"/>
+    <ref_node id="auto_repair_entry" enabled="1" name="自动修复"/>
+    <ref_node id="auto_fill_entry" enabled="1" name="自动填充"/>
+    <ref_node id="hollow_entry" enabled="1" name="自动镂空"/>
+    <ref_node id="auto_dighole_entry" enabled="1" name="自动打孔"/>
+    <ref_node id="auto_addbridge_entry" enabled="1" name="自动加强筋"/>
+    <ref_node id="auto_support_entry" enabled="1" name="自动支撑"/>
+    <ref_node id="layout_entry" enabled="1" name="自动排版"/>
+</contain>

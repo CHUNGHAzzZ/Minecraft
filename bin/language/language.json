@@ -1,0 +1,100 @@
+{
+    "curr_selected_idx": 2,
+    "languagetable": [
+        {
+            "en_name": "Simplified Chinese",
+            "country_code": 2052,
+            "local_name": "简体中文"
+        },
+        {
+            "en_name": "Traditional Chinese",
+            "country_code": 3076,
+            "local_name": "繁體中文"
+        },
+        {
+            "en_name": "English",
+            "country_code": 1033,
+            "local_name": "English"
+        },
+        {
+            "en_name": "German",
+            "country_code": 1031,
+            "local_name": "Deutsch"
+        },
+        {
+            "en_name": "Spanish",
+            "country_code": 1034,
+            "local_name": "Español"
+        },
+        {
+            "en_name": "Finland",
+            "country_code": 2077,
+            "local_name": "Suomi"
+        },
+        {
+            "en_name": "French",
+            "country_code": 1036,
+            "local_name": "Français"
+        },
+        {
+            "en_name": "Hungarian",
+            "country_code": 1038,
+            "local_name": "A magyar"
+        },
+        {
+            "en_name": "Italian",
+            "country_code": 1040,
+            "local_name": "Italiano"
+        },
+        {
+            "en_name": "Japanese",
+            "country_code": 1041,
+            "local_name": "日本語"
+        },
+        {
+            "en_name": "Korean",
+            "country_code": 1042,
+            "local_name": "한국어"
+        },
+        {
+            "en_name": "Holland",
+            "country_code": 1043,
+            "local_name": "Nederlands"
+        },
+        {
+            "en_name": "Poland",
+            "country_code": 1045,
+            "local_name": "Polshi"
+        },
+        {
+            "en_name": "Portuguese",
+            "country_code": 1046,
+            "local_name": "Português"
+        },
+        {
+            "en_name": "Russian",
+            "country_code": 1049,
+            "local_name": "Русский"
+        },
+        {
+            "en_name": "Turkish",
+            "country_code": 1055,
+            "local_name": "Türk dili"
+        },
+        {
+            "en_name": "Arabic",
+            "country_code": 1025,
+            "local_name": "العربية"
+        },
+        {
+            "en_name": "Greek",
+            "country_code": 1032,
+            "local_name": "Ελλάδα"
+        },
+        {
+            "en_name": "Czech Republic",
+            "country_code": 1029,
+            "local_name": "Česká republika"
+        }
+    ]
+}

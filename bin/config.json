@@ -1,0 +1,57 @@
+{
+    "product_name": "tooth software",
+    "product_id": "cbd_001",
+    "product_type": 17945,
+    "download_url": "http://10.249.0.21:21000/PCVersionUpdate/getInfo.do6",
+    "user_manual": "https://baidu.com",
+    "technical_support": "https://baidu.com",
+    "netprinter_download_url": "https://baidu.com",
+    "registered_url": "https://baidu.com",
+    "modify_password_url": "https://baidu.com",
+    "version": "T0.0.3",
+    "config_version": "0.0.2",
+    "log_save_days": 15,
+    "near_history_record_count": 15,
+    "setting": {
+        "skinsetting": {
+            "theme_style": 0,
+            "cloud_save": 0,
+            "resolution_ratio": 1.0
+        },
+        "performancesetting": {
+            "quality": 1,
+            "max_undo": 30
+        },
+        "filesetting": {
+            "thumbnail_idx": 0,
+            "auto_save_path": "",
+            "auto_save_time": 30
+        },
+        "operatorsetting": {
+            "check_err_on_import": 0,
+            "model_thumbnail": 0,
+            "fill_cavity_before_slice": 0,
+            "check_cavity_before_slice": 0,
+            "check_collide_before_slice": 0,
+            "check_dangling_before_slice": 0,
+            "check_model_size_before_slice": 0
+        },
+        "upgradesetting": {
+            "auto_check_upgrade": 1,
+            "auto_upgrade_resin_config": 0,
+            "enabled_upgrade": 1,
+            "enabled_upgrade_resin_config": 1,
+            "upgrade_url": "http://10.249.0.21:21000/PCVersionUpdate/getInfo.do6",
+            "user_greement": "https://baidu.com",
+            "privacy_policy": "https://baidu.com",
+            "copyright": "Copyright@2023 CHITUBOX.All rights reserved."
+        }
+    },
+    "machine_config": {
+        "curr_machine": "",
+        "curr_machine_cfg": "",
+        "curr_material": 0,
+        "current_slice": 0,
+        "current_support": 0
+    }
+}

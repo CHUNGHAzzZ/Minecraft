@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<node id="addbridge_entry" descrip="切片入口">
+    <ref_component id="{10591C83-02BA-BDD5-A008-F44535D30BE8}" guid="IID_AlgoAddBridge" name="切片算法组件"/>
+</node>
+
+<node id="auto_addbridge_entry" descrip="切片入口">
+    <ref_component id="{65D18693-1CD4-4565-BD9B-1BC71C077FDC}" guid="IID_AlgoAutoAddBridge" name="切片算法组件"/>
+</node>
+
+<node id="auto_repair_entry" descrip="切片入口">
+    <ref_component id="{65D18693-1CD4-4565-BD9B-1BC71C077FGC}" guid="IID_AlgoAutoRepair" name="切片算法组件"/>
+</node>
+
+<node id="auto_fill_entry" descrip="切片入口">
+    <ref_component id="{65D18693-1CD4-4565-BD9B-1BC71C077FGV}" guid="IID_AlgoAutoFill" name="切片算法组件"/>
+</node>
+
+<node id="auto_dighole_entry" descrip="切片入口">
+    <ref_component id="{9DE272A7-3D66-4A8C-A48E-0D994071D20A}" guid="IID_AlgoAutoDighole" name="切片算法组件"/>
+</node>
+
+<node id="auto_orient_entry" descrip="切片入口">
+    <ref_component id="{01F4470A-367A-42CD-99D8-460FF184EE3A}" guid="IID_AlgoAutoOrient" name="切片算法组件"/>
+</node>
+
+<node id="auto_support_entry" descrip="切片入口">
+    <ref_component id="{3E51D0FE-481C-95D0-764B-08C57FC1014C}" guid="IID_AlgoAutoSupport" name="切片算法组件"/>
+</node>
+
+<node id="cut_bottom_entry" descrip="切片入口">
+    <ref_component id="{B8E8EF5D-D201-2A41-9E3A-06E1418F359D}" guid="IID_AlgoCutBottom" name="切片算法组件"/>
+</node>
+
+<node id="dighole_entry" descrip="切片入口">
+    <ref_component id="{DCBC046A-1B62-F64C-E324-DE6897663A62}" guid="IID_AlgoDighole" name="切片算法组件"/>
+</node>
+
+<node id="faceorient_entry" descrip="切片入口">
+    <ref_component id="{A240A2C9-197A-0CED-269E-3D7257DB4C9C}" guid="IID_AlgoFaceOrient" name="切片算法组件"/>
+</node>
+
+<node id="hollow_entry" descrip="切片入口">
+    <ref_component id="{99908C38-917F-C621-CFD2-F602DCEC34E5}" guid="IID_AlgoHollow" name="切片算法组件"/>
+</node>
+
+<node id="layout_entry" descrip="切片入口">
+    <ref_component id="{C644D2D3-1DDA-536C-C2D7-9697AAEB24FB}" guid="IID_AlgoLayout" name="切片算法组件"/>
+</node>
+
+<node id="slice_entry" descrip="切片入口">
+    <ref_component id="{07E0E203-78CA-803D-6310-E1F8FF77A115}" guid="IID_AlgoSlice" name="切片算法组件"/>
+</node>
+
+<node id="support_entry" descrip="切片入口">
+    <ref_component id="{E2C12089-CFF3-D88F-B46A-117C7B855ABC}" guid="IID_AlgoSupport" name="切片算法组件"/>
+</node>
+
+<node id="texttag_entry" descrip="切片入口">
+    <ref_component id="{465D5388-09B2-198D-3447-2471EAE81562}" guid="IID_AlgoTextTag" name="切片算法组件"/>
+</node>
