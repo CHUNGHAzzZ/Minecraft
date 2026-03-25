@@ -133,6 +133,14 @@ add_custom_command(TARGET Minecraft POST_BUILD
     COMMENT "Copying Qt6 platform plugin"
 )
 
+# Copy Resource folder to output directory
+add_custom_command(TARGET Minecraft POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/bin/Resource"
+        "$<TARGET_FILE_DIR:Minecraft>/Resource"
+    COMMENT "Copying Resource folder"
+)
+
 # Install Qt6 runtime
 install(FILES
     ${QT6_PLATFORM_ROOT}/lib/Qt6Core.dll
@@ -146,6 +154,12 @@ install(FILES
 install(FILES
     ${QT6_PLATFORM_ROOT}/lib/qwindows.dll
     DESTINATION bin/platforms
+)
+
+# Install Resource folder
+install(DIRECTORY
+    ${CMAKE_SOURCE_DIR}/bin/Resource
+    DESTINATION bin
 )
 
 install(TARGETS Minecraft

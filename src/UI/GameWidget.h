@@ -10,6 +10,7 @@ namespace Minecraft {
     class Shader;
     class Camera;
     class Chunk;
+    class Texture;
 }
 
 class GameWidget : public QOpenGLWidget {
@@ -34,6 +35,7 @@ private:
     
     std::unique_ptr<Minecraft::Shader> m_Shader;
     std::unique_ptr<Minecraft::Camera> m_Camera;
+    std::unique_ptr<Minecraft::Texture> m_BlockTexture;  // 方块纹理图集
     std::vector<std::unique_ptr<Minecraft::Chunk>> m_Chunks;
     
     bool m_FirstMouse = true;

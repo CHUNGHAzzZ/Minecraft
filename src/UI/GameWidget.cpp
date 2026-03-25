@@ -6,6 +6,7 @@
 #include "../Core/Input.h"
 #include "../Render/Shader.h"
 #include "../Render/Camera.h"
+#include "../Render/Texture.h"
 #include "../World/Block.h"
 #include "../World/Chunk.h"
 #include "../Utils/Logger.h"
@@ -22,6 +23,7 @@ GameWidget::~GameWidget() {
     // 确保 OpenGL 资源在正确的上下文中释放
     makeCurrent();
     m_Chunks.clear();
+    m_BlockTexture.reset();
     m_Shader.reset();
     m_Camera.reset();
     doneCurrent();
@@ -64,10 +66,20 @@ void GameWidget::initializeGL() {
     
     // Load shader
     m_Shader = std::make_unique<Minecraft::Shader>();
-    if (!m_Shader->LoadFromFile("src/Resource/Shader/basic.vert", 
-                                 "src/Resource/Shader/basic.frag")) {
+    if (!m_Shader->LoadFromFile("Resource/Shader/basic.vert", 
+                                 "Resource/Shader/basic.frag")) {
         LOG_ERROR("Failed to load shaders");
         qWarning("Failed to load shaders");
+    }
+    
+    // Load block texture atlas
+    m_BlockTexture = std::make_unique<Minecraft::Texture>();
+    if (!m_BlockTexture->LoadFromFile("Resource/Texture/default_texture.png", false)) {
+        LOG_ERROR("Failed to load block texture atlas");
+    } else {
+        LOG_INFO("Block texture atlas loaded: " + 
+                 std::to_string(m_BlockTexture->GetWidth()) + "x" + 
+                 std::to_string(m_BlockTexture->GetHeight()));
     }
     
     // Create camera
@@ -106,6 +118,12 @@ void GameWidget::paintGL() {
     
     m_Shader->Bind();
     m_Shader->SetMat4("uViewProjection", m_Camera->GetViewProjectionMatrix());
+    
+    // Bind block texture
+    if (m_BlockTexture) {
+        m_BlockTexture->Bind(0);
+        m_Shader->SetInt("uTexture", 0);
+    }
     
     for (const auto& chunk : m_Chunks) {
         chunk->Render();
