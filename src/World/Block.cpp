@@ -1,0 +1,66 @@
+#include "Block.h"
+
+namespace Minecraft {
+
+BlockData Block::s_BlockRegistry[static_cast<size_t>(BlockType::Count)];
+
+void Block::InitializeBlockRegistry() {
+    // Air
+    s_BlockRegistry[0] = {
+        BlockType::Air, "Air", true, false, 0, 0, 0
+    };
+    
+    // Grass
+    s_BlockRegistry[1] = {
+        BlockType::Grass, "Grass", false, true, 0, 1, 2
+    };
+    
+    // Dirt
+    s_BlockRegistry[2] = {
+        BlockType::Dirt, "Dirt", false, true, 2, 2, 2
+    };
+    
+    // Stone
+    s_BlockRegistry[3] = {
+        BlockType::Stone, "Stone", false, true, 3, 3, 3
+    };
+    
+    // Wood
+    s_BlockRegistry[4] = {
+        BlockType::Wood, "Wood", false, true, 4, 5, 4
+    };
+    
+    // Leaves
+    s_BlockRegistry[5] = {
+        BlockType::Leaves, "Leaves", true, true, 6, 6, 6
+    };
+    
+    // Sand
+    s_BlockRegistry[6] = {
+        BlockType::Sand, "Sand", false, true, 7, 7, 7
+    };
+    
+    // Water
+    s_BlockRegistry[7] = {
+        BlockType::Water, "Water", true, false, 8, 8, 8
+    };
+    
+    // Glass
+    s_BlockRegistry[8] = {
+        BlockType::Glass, "Glass", true, true, 9, 9, 9
+    };
+}
+
+const BlockData& Block::GetBlockData(BlockType type) {
+    return s_BlockRegistry[static_cast<size_t>(type)];
+}
+
+bool Block::IsTransparent(BlockType type) {
+    return s_BlockRegistry[static_cast<size_t>(type)].isTransparent;
+}
+
+bool Block::IsSolid(BlockType type) {
+    return s_BlockRegistry[static_cast<size_t>(type)].isSolid;
+}
+
+} // namespace Minecraft
