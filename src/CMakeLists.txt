@@ -16,7 +16,6 @@ set(STB_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/Utils)
 qt6_define_imported_targets()
 message(STATUS "Using manual MOC generation (run build_moc.bat before building)")
 
-# 自动扫描 src 目录下的所有源文件
 file(GLOB_RECURSE MINECRAFT_SOURCES
     "${CMAKE_SOURCE_DIR}/src/*.cpp"
 )
@@ -40,27 +39,14 @@ else()
 endif()
 
 # 为 Visual Studio 创建源文件分组（筛选器）
-# 这样可以在 VS 中按目录结构显示文件
 foreach(source IN LISTS MINECRAFT_SOURCES MINECRAFT_HEADERS)
-    # 获取文件相对于 src 目录的路径
     file(RELATIVE_PATH source_rel "${CMAKE_SOURCE_DIR}/src" "${source}")
-    
-    # 获取文件所在的目录
     get_filename_component(source_path "${source_rel}" PATH)
     
     # 如果文件在子目录中，创建对应的筛选器
     if(NOT source_path STREQUAL "")
-        # 将路径中的 / 替换为 \\ (Windows 风格)
         string(REPLACE "/" "\\" source_path_msvc "${source_path}")
         source_group("${source_path_msvc}" FILES "${source}")
-    else()
-        # 根目录文件放在 "Source Files" 或 "Header Files"
-        get_filename_component(source_ext "${source}" EXT)
-        if(source_ext STREQUAL ".cpp")
-            source_group("Source Files" FILES "${source}")
-        else()
-            source_group("Header Files" FILES "${source}")
-        endif()
     endif()
 endforeach()
 

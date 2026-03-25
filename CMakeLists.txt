@@ -40,7 +40,8 @@ endif()
 if(APPLE)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version" FORCE)
 endif()
-# 将动态库和exe输出到相同目录, 避免拷贝动态库, 方便调试
+
+# 将动态库和exe输出到相同目录
 set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 
