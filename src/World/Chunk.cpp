@@ -54,23 +54,20 @@ BlockType Chunk::GetBlock(int x, int y, int z) const {
 }
 
 void Chunk::GenerateTerrain() {
-    // Simple terrain generation
+    // Simple flat grass platform: 20x20 at y=0
+    // Only generate if chunk is at origin (0,0) or adjacent
+    if (m_ChunkX < -1 || m_ChunkX > 1 || m_ChunkZ < -1 || m_ChunkZ > 1) {
+        return; // Skip chunks outside the platform area
+    }
+    
     for (int x = 0; x < CHUNK_SIZE; ++x) {
         for (int z = 0; z < CHUNK_SIZE; ++z) {
             int worldX = m_ChunkX * CHUNK_SIZE + x;
             int worldZ = m_ChunkZ * CHUNK_SIZE + z;
             
-            // Simple height map
-            int height = 64 + static_cast<int>(8.0f * sin(worldX * 0.1f) * cos(worldZ * 0.1f));
-            
-            for (int y = 0; y < height; ++y) {
-                if (y < height - 4) {
-                    SetBlock(x, y, z, BlockType::Stone);
-                } else if (y < height - 1) {
-                    SetBlock(x, y, z, BlockType::Dirt);
-                } else {
-                    SetBlock(x, y, z, BlockType::Grass);
-                }
+            // Only generate within 20x20 area centered at origin
+            if (worldX >= -10 && worldX < 10 && worldZ >= -10 && worldZ < 10) {
+                SetBlock(x, 0, z, BlockType::Grass);
             }
         }
     }

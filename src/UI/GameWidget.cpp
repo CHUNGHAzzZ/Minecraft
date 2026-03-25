@@ -84,13 +84,14 @@ void GameWidget::initializeGL() {
     
     // Create camera
     m_Camera = std::make_unique<Minecraft::Camera>(70.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
-    m_Camera->SetPosition(glm::vec3(8.0f, 80.0f, 8.0f));
-    LOG_INFO("Camera initialized at position (8, 80, 8)");
+    m_Camera->SetPosition(glm::vec3(0.0f, 5.0f, 10.0f));  // Position above and behind the platform
+    m_Camera->SetRotation(-90.0f, -30.0f);  // Look down at the platform
+    LOG_INFO("Camera initialized at position (0, 5, 10) looking down");
     
-    // Generate test chunks
+    // Generate test chunks (only around origin for 20x20 platform)
     LOG_INFO("Generating world chunks...");
-    for (int x = -2; x <= 2; ++x) {
-        for (int z = -2; z <= 2; ++z) {
+    for (int x = -1; x <= 1; ++x) {
+        for (int z = -1; z <= 1; ++z) {
             auto chunk = std::make_unique<Minecraft::Chunk>(x, z);
             chunk->GenerateTerrain();
             chunk->BuildMesh();

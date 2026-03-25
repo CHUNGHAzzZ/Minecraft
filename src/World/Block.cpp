@@ -10,9 +10,9 @@ void Block::InitializeBlockRegistry() {
         BlockType::Air, "Air", true, false, 0, 0, 0
     };
     
-    // Grass
+    // Grass - top:(0,0)=0, side:(3,0)=3, bottom:(2,0)=2
     s_BlockRegistry[1] = {
-        BlockType::Grass, "Grass", false, true, 0, 1, 2
+        BlockType::Grass, "Grass", false, true, 0, 3, 2
     };
     
     // Dirt

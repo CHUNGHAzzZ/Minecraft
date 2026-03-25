@@ -79,6 +79,8 @@ set_target_properties(Minecraft PROPERTIES
     AUTOMOC OFF
     AUTORCC OFF
     AUTOUIC OFF
+    # Set working directory for Visual Studio debugging
+    VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:Minecraft>"
 )
 
 target_include_directories(Minecraft
