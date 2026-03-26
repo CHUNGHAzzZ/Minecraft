@@ -97,30 +97,30 @@ target_link_libraries(Minecraft
 )
 
 # Copy Qt6 DLLs to output directory
-set(QT6_DLLS
-    Qt6Core.dll
-    Qt6Gui.dll
-    Qt6Widgets.dll
-    Qt6OpenGL.dll
-    Qt6OpenGLWidgets.dll
+set(QT6_DLLS_BASE
+    Qt6Core
+    Qt6Gui
+    Qt6Widgets
+    Qt6OpenGL
+    Qt6OpenGLWidgets
 )
 
-foreach(dll ${QT6_DLLS})
+foreach(dll_base ${QT6_DLLS_BASE})
     add_custom_command(TARGET Minecraft POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${QT6_PLATFORM_ROOT}/lib/${dll}"
+            "$<IF:$<CONFIG:Debug>,${QT6_PLATFORM_ROOT}/lib/${dll_base}d.dll,${QT6_PLATFORM_ROOT}/lib/${dll_base}.dll>"
             "$<TARGET_FILE_DIR:Minecraft>"
-        COMMENT "Copying ${dll}"
+        COMMENT "Copying ${dll_base}$<$<CONFIG:Debug>:d>.dll"
     )
 endforeach()
 
-# Copy Qt6 platform plugin (qwindows.dll)
+# Copy Qt6 platform plugin (qwindows.dll / qwindowsd.dll)
 add_custom_command(TARGET Minecraft POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:Minecraft>/platforms"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${QT6_PLATFORM_ROOT}/lib/qwindows.dll"
-        "$<TARGET_FILE_DIR:Minecraft>/platforms/qwindows.dll"
+        "$<IF:$<CONFIG:Debug>,${QT6_PLATFORM_ROOT}/lib/qwindowsd.dll,${QT6_PLATFORM_ROOT}/lib/qwindows.dll>"
+        "$<TARGET_FILE_DIR:Minecraft>/platforms/$<IF:$<CONFIG:Debug>,qwindowsd.dll,qwindows.dll>"
     COMMENT "Copying Qt6 platform plugin"
 )
 
@@ -132,18 +132,16 @@ add_custom_command(TARGET Minecraft POST_BUILD
     COMMENT "Copying Resource folder"
 )
 
-# Install Qt6 runtime
-install(FILES
-    ${QT6_PLATFORM_ROOT}/lib/Qt6Core.dll
-    ${QT6_PLATFORM_ROOT}/lib/Qt6Gui.dll
-    ${QT6_PLATFORM_ROOT}/lib/Qt6Widgets.dll
-    ${QT6_PLATFORM_ROOT}/lib/Qt6OpenGL.dll
-    ${QT6_PLATFORM_ROOT}/lib/Qt6OpenGLWidgets.dll
-    DESTINATION bin
-)
+# Install Qt6 runtime (根据编译配置安装对应版本)
+foreach(dll_base ${QT6_DLLS_BASE})
+    install(FILES
+        "$<IF:$<CONFIG:Debug>,${QT6_PLATFORM_ROOT}/lib/${dll_base}d.dll,${QT6_PLATFORM_ROOT}/lib/${dll_base}.dll>"
+        DESTINATION bin
+    )
+endforeach()
 
 install(FILES
-    ${QT6_PLATFORM_ROOT}/lib/qwindows.dll
+    "$<IF:$<CONFIG:Debug>,${QT6_PLATFORM_ROOT}/lib/qwindowsd.dll,${QT6_PLATFORM_ROOT}/lib/qwindows.dll>"
     DESTINATION bin/platforms
 )
 

@@ -57,68 +57,74 @@ BlockType Chunk::GetBlock(int x, int y, int z) const {
 }
 
 void Chunk::GenerateTerrain() {
-    // Create noise generator
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetFrequency(0.01f);  // Lower = smoother terrain
-    noise.SetSeed(1337);  // Fixed seed for consistent world
+    // 创建噪声生成器
+    FastNoiseLite heightNoise;
+    heightNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    heightNoise.SetFrequency(0.01f);
+    heightNoise.SetSeed(1337);
     
-    // Generate terrain using multi-octave noise
+    // 生物群系噪声（决定区域类型：草原、沙漠、石山）
+    FastNoiseLite biomeNoise;
+    biomeNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    biomeNoise.SetFrequency(0.003f);  // 更低频率 = 更大的生物群系区域
+    biomeNoise.SetSeed(7331);
+    
     for (int x = 0; x < CHUNK_SIZE; ++x) {
         for (int z = 0; z < CHUNK_SIZE; ++z) {
             int worldX = m_ChunkX * CHUNK_SIZE + x;
             int worldZ = m_ChunkZ * CHUNK_SIZE + z;
             
-            // Multi-octave noise for natural terrain
+            // 计算地形高度（多层噪声）
             float height = 0.0f;
+            height += heightNoise.GetNoise((float)worldX * 1.0f, (float)worldZ * 1.0f) * 30.0f;
+            height += heightNoise.GetNoise((float)worldX * 3.0f, (float)worldZ * 3.0f) * 10.0f;
+            height += heightNoise.GetNoise((float)worldX * 8.0f, (float)worldZ * 8.0f) * 3.0f;
             
-            // Large features (mountains/valleys)
-            height += noise.GetNoise((float)worldX * 1.0f, (float)worldZ * 1.0f) * 30.0f;
-            
-            // Medium features (hills)
-            height += noise.GetNoise((float)worldX * 3.0f, (float)worldZ * 3.0f) * 10.0f;
-            
-            // Small features (details)
-            height += noise.GetNoise((float)worldX * 8.0f, (float)worldZ * 8.0f) * 3.0f;
-            
-            // Base height + noise
             int terrainHeight = 64 + static_cast<int>(height);
-            
-            // Clamp height to valid range
             terrainHeight = std::max(1, std::min(terrainHeight, CHUNK_HEIGHT - 1));
             
-            // Generate blocks from bottom to terrain height
+            // 计算生物群系类型（-1.0 到 1.0）
+            float biomeValue = biomeNoise.GetNoise((float)worldX, (float)worldZ);
+            
+            // 根据生物群系值决定区域类型
+            // biomeValue < -0.3: 沙漠 (Sand)
+            // -0.3 <= biomeValue < 0.3: 草原 (Grass)
+            // biomeValue >= 0.3: 石山 (Stone)
+            
+            BlockType surfaceBlock;
+            BlockType subsurfaceBlock;
+            BlockType deepBlock;
+            
+            if (biomeValue < -0.3f) {
+                // 沙漠生物群系
+                surfaceBlock = BlockType::Sand;
+                subsurfaceBlock = BlockType::Sand;
+                deepBlock = BlockType::Stone;
+            } else if (biomeValue < 0.3f) {
+                // 草原生物群系
+                surfaceBlock = BlockType::Grass;
+                subsurfaceBlock = BlockType::Dirt;
+                deepBlock = BlockType::Stone;
+            } else {
+                // 石山生物群系
+                surfaceBlock = BlockType::Stone;
+                subsurfaceBlock = BlockType::Stone;
+                deepBlock = BlockType::Stone;
+            }
+            
+            // 生成方块层
             for (int y = 0; y < terrainHeight; ++y) {
-                int worldY = y;
-                
-                // Use position-based hash to randomly select block type
-                int variant = BlockRandom::GetVariant(worldX, worldY, worldZ, 3);
-                
                 BlockType blockType;
-                if (y < terrainHeight - 4) {
-                    // Deep underground: randomly Stone, Grass, or Sand
-                    switch (variant) {
-                        case 0: blockType = BlockType::Stone; break;
-                        case 1: blockType = BlockType::Grass; break;
-                        case 2: blockType = BlockType::Sand; break;
-                        default: blockType = BlockType::Stone; break;
-                    }
+                
+                if (y < terrainHeight - 5) {
+                    // 深层：石头
+                    blockType = deepBlock;
                 } else if (y < terrainHeight - 1) {
-                    // Near surface: randomly Stone, Grass, or Sand
-                    switch (variant) {
-                        case 0: blockType = BlockType::Stone; break;
-                        case 1: blockType = BlockType::Grass; break;
-                        case 2: blockType = BlockType::Sand; break;
-                        default: blockType = BlockType::Dirt; break;
-                    }
+                    // 次表层：根据生物群系
+                    blockType = subsurfaceBlock;
                 } else {
-                    // Surface: randomly Stone, Grass, or Sand
-                    switch (variant) {
-                        case 0: blockType = BlockType::Stone; break;
-                        case 1: blockType = BlockType::Grass; break;
-                        case 2: blockType = BlockType::Sand; break;
-                        default: blockType = BlockType::Grass; break;
-                    }
+                    // 表层：根据生物群系
+                    blockType = surfaceBlock;
                 }
                 
                 SetBlock(x, y, z, blockType);

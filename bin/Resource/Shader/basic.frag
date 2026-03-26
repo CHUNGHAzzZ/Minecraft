@@ -6,17 +6,11 @@ in float vLighting;
 
 out vec4 FragColor;
 
-uniform sampler2D uTexture;
+uniform sampler2DArray uTexture;
 
 void main() {
-    // Simple texture atlas lookup (16x16 atlas)
-    vec2 atlasSize = vec2(16.0, 16.0);
-    float texX = mod(vTexIndex, atlasSize.x);
-    float texY = floor(vTexIndex / atlasSize.x);
-    
-    vec2 atlasCoord = (vec2(texX, texY) + vTexCoord) / atlasSize;
-    
-    vec4 texColor = texture(uTexture, atlasCoord);
+    // 使用纹理数组，直接通过索引访问对应层
+    vec4 texColor = texture(uTexture, vec3(vTexCoord, vTexIndex));
     if (texColor.a < 0.1)
         discard;
     

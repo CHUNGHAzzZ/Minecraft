@@ -75,9 +75,9 @@ void GameWidget::initializeGL() {
         qWarning("Failed to load shaders");
     }
     
-    // Load block texture atlas
+    // Load block texture atlas as texture array
     m_BlockTexture = std::make_unique<Minecraft::Texture>();
-    if (!m_BlockTexture->LoadFromFile("Resource/Texture/default_texture.png", false)) {
+    if (!m_BlockTexture->LoadAsTextureArray("Resource/Texture/default_texture.png", 16, 16)) {
         LOG_ERROR("Failed to load block texture atlas");
     } else {
         LOG_INFO("Block texture atlas loaded: " + 
