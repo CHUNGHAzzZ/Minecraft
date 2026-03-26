@@ -9,8 +9,9 @@
 namespace Minecraft {
     class Shader;
     class Camera;
-    class Chunk;
+    class World;
     class Texture;
+    class Player;
 }
 
 class GameWidget : public QOpenGLWidget {
@@ -36,7 +37,8 @@ private:
     std::unique_ptr<Minecraft::Shader> m_Shader;
     std::unique_ptr<Minecraft::Camera> m_Camera;
     std::unique_ptr<Minecraft::Texture> m_BlockTexture;  // 方块纹理图集
-    std::vector<std::unique_ptr<Minecraft::Chunk>> m_Chunks;
+    std::unique_ptr<Minecraft::World> m_World;  // 世界管理器
+    std::unique_ptr<Minecraft::Player> m_Player;  // 玩家
     
     bool m_FirstMouse = true;
     float m_LastX = 0.0f;

@@ -1,5 +1,7 @@
 #include "Chunk.h"
 #include "../Utils/Logger.h"
+#include "../Utils/FastNoiseLite.h"
+#include "BlockRandom.h"
 #include <GL/glew.h>
 #include <cmath>
 
@@ -54,20 +56,71 @@ BlockType Chunk::GetBlock(int x, int y, int z) const {
 }
 
 void Chunk::GenerateTerrain() {
-    // Simple flat grass platform: 20x20 at y=0
-    // Only generate if chunk is at origin (0,0) or adjacent
-    if (m_ChunkX < -1 || m_ChunkX > 1 || m_ChunkZ < -1 || m_ChunkZ > 1) {
-        return; // Skip chunks outside the platform area
-    }
+    // Create noise generator
+    FastNoiseLite noise;
+    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    noise.SetFrequency(0.01f);  // Lower = smoother terrain
+    noise.SetSeed(1337);  // Fixed seed for consistent world
     
+    // Generate terrain using multi-octave noise
     for (int x = 0; x < CHUNK_SIZE; ++x) {
         for (int z = 0; z < CHUNK_SIZE; ++z) {
             int worldX = m_ChunkX * CHUNK_SIZE + x;
             int worldZ = m_ChunkZ * CHUNK_SIZE + z;
             
-            // Only generate within 20x20 area centered at origin
-            if (worldX >= -10 && worldX < 10 && worldZ >= -10 && worldZ < 10) {
-                SetBlock(x, 0, z, BlockType::Grass);
+            // Multi-octave noise for natural terrain
+            float height = 0.0f;
+            
+            // Large features (mountains/valleys)
+            height += noise.GetNoise((float)worldX * 1.0f, (float)worldZ * 1.0f) * 30.0f;
+            
+            // Medium features (hills)
+            height += noise.GetNoise((float)worldX * 3.0f, (float)worldZ * 3.0f) * 10.0f;
+            
+            // Small features (details)
+            height += noise.GetNoise((float)worldX * 8.0f, (float)worldZ * 8.0f) * 3.0f;
+            
+            // Base height + noise
+            int terrainHeight = 64 + static_cast<int>(height);
+            
+            // Clamp height to valid range
+            terrainHeight = std::max(1, std::min(terrainHeight, CHUNK_HEIGHT - 1));
+            
+            // Generate blocks from bottom to terrain height
+            for (int y = 0; y < terrainHeight; ++y) {
+                int worldY = y;
+                
+                // Use position-based hash to randomly select block type
+                int variant = BlockRandom::GetVariant(worldX, worldY, worldZ, 3);
+                
+                BlockType blockType;
+                if (y < terrainHeight - 4) {
+                    // Deep underground: randomly Stone, Grass, or Sand
+                    switch (variant) {
+                        case 0: blockType = BlockType::Stone; break;
+                        case 1: blockType = BlockType::Grass; break;
+                        case 2: blockType = BlockType::Sand; break;
+                        default: blockType = BlockType::Stone; break;
+                    }
+                } else if (y < terrainHeight - 1) {
+                    // Near surface: randomly Stone, Grass, or Sand
+                    switch (variant) {
+                        case 0: blockType = BlockType::Stone; break;
+                        case 1: blockType = BlockType::Grass; break;
+                        case 2: blockType = BlockType::Sand; break;
+                        default: blockType = BlockType::Dirt; break;
+                    }
+                } else {
+                    // Surface: randomly Stone, Grass, or Sand
+                    switch (variant) {
+                        case 0: blockType = BlockType::Stone; break;
+                        case 1: blockType = BlockType::Grass; break;
+                        case 2: blockType = BlockType::Sand; break;
+                        default: blockType = BlockType::Grass; break;
+                    }
+                }
+                
+                SetBlock(x, y, z, blockType);
             }
         }
     }

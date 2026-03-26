@@ -4,11 +4,12 @@
 
 #include "../Core/Time.h"
 #include "../Core/Input.h"
+#include "../Core/Player.h"
 #include "../Render/Shader.h"
 #include "../Render/Camera.h"
 #include "../Render/Texture.h"
 #include "../World/Block.h"
-#include "../World/Chunk.h"
+#include "../World/World.h"
 #include "../Utils/Logger.h"
 
 GameWidget::GameWidget(QWidget* parent)
@@ -22,7 +23,8 @@ GameWidget::GameWidget(QWidget* parent)
 GameWidget::~GameWidget() {
     // 确保 OpenGL 资源在正确的上下文中释放
     makeCurrent();
-    m_Chunks.clear();
+    m_Player.reset();
+    m_World.reset();
     m_BlockTexture.reset();
     m_Shader.reset();
     m_Camera.reset();
@@ -84,21 +86,19 @@ void GameWidget::initializeGL() {
     
     // Create camera
     m_Camera = std::make_unique<Minecraft::Camera>(70.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
-    m_Camera->SetPosition(glm::vec3(0.0f, 5.0f, 10.0f));  // Position above and behind the platform
-    m_Camera->SetRotation(-90.0f, -30.0f);  // Look down at the platform
-    LOG_INFO("Camera initialized at position (0, 5, 10) looking down");
+    m_Camera->SetPosition(glm::vec3(0.0f, 80.0f, 0.0f));
+    LOG_INFO("Camera initialized");
     
-    // Generate test chunks (only around origin for 20x20 platform)
-    LOG_INFO("Generating world chunks...");
-    for (int x = -1; x <= 1; ++x) {
-        for (int z = -1; z <= 1; ++z) {
-            auto chunk = std::make_unique<Minecraft::Chunk>(x, z);
-            chunk->GenerateTerrain();
-            chunk->BuildMesh();
-            m_Chunks.push_back(std::move(chunk));
-        }
-    }
-    LOG_INFO("Generated " + std::to_string(m_Chunks.size()) + " chunks");
+    // Create player
+    m_Player = std::make_unique<Minecraft::Player>();
+    m_Player->SetPosition(glm::vec3(0.0f, 80.0f, 0.0f));
+    LOG_INFO("Player created");
+    
+    // Create world and initialize around player
+    m_World = std::make_unique<Minecraft::World>();
+    m_World->SetRenderDistance(4);  // 4 chunks = 64 blocks radius
+    m_World->Initialize(m_Player->GetPosition());
+    LOG_INFO("World initialized with render distance: " + std::to_string(m_World->GetRenderDistance()));
     
     setCursor(Qt::BlankCursor);
     m_FirstMouse = true;
@@ -115,7 +115,7 @@ void GameWidget::paintGL() {
     glClearColor(0.53f, 0.81f, 0.92f, 1.0f); // Sky blue
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    if (!m_Shader || !m_Camera) return;
+    if (!m_Shader || !m_Camera || !m_World) return;
     
     m_Shader->Bind();
     m_Shader->SetMat4("uViewProjection", m_Camera->GetViewProjectionMatrix());
@@ -126,37 +126,71 @@ void GameWidget::paintGL() {
         m_Shader->SetInt("uTexture", 0);
     }
     
-    for (const auto& chunk : m_Chunks) {
-        chunk->Render();
-    }
+    // Render world
+    m_World->Render();
     
     m_Shader->Unbind();
 }
 
 void GameWidget::UpdateGame() {
-    if (!m_Camera) return;
+    if (!m_Camera || !m_World || !m_Player) return;
     
-    float speed = 10.0f * Minecraft::Time::DeltaTime();
+    float deltaTime = Minecraft::Time::DeltaTime();
     
-    // Movement
+    // 处理移动输入
+    glm::vec3 moveDir(0);
     if (Minecraft::Input::IsKeyPressed(Qt::Key_W)) {
-        m_Camera->Move(m_Camera->GetFront() * speed);
+        moveDir += m_Camera->GetFront();
     }
     if (Minecraft::Input::IsKeyPressed(Qt::Key_S)) {
-        m_Camera->Move(-m_Camera->GetFront() * speed);
+        moveDir -= m_Camera->GetFront();
     }
     if (Minecraft::Input::IsKeyPressed(Qt::Key_A)) {
-        m_Camera->Move(-m_Camera->GetRight() * speed);
+        moveDir -= m_Camera->GetRight();
     }
     if (Minecraft::Input::IsKeyPressed(Qt::Key_D)) {
-        m_Camera->Move(m_Camera->GetRight() * speed);
+        moveDir += m_Camera->GetRight();
     }
-    if (Minecraft::Input::IsKeyPressed(Qt::Key_Space)) {
-        m_Camera->Move(glm::vec3(0, 1, 0) * speed);
+    
+    // 水平移动（忽略Y分量）
+    if (!m_Player->IsFlying()) {
+        moveDir.y = 0;
     }
-    if (Minecraft::Input::IsKeyPressed(Qt::Key_Shift)) {
-        m_Camera->Move(glm::vec3(0, -1, 0) * speed);
+    
+    if (glm::length(moveDir) > 0) {
+        m_Player->Move(moveDir, deltaTime, m_World.get());
     }
+    
+    // 跳跃
+    if (Minecraft::Input::IsKeyJustPressed(Qt::Key_Space)) {
+        if (m_Player->IsFlying()) {
+            // 飞行模式：向上移动
+            m_Player->Move(glm::vec3(0, 1, 0), deltaTime, m_World.get());
+        } else {
+            m_Player->Jump();
+        }
+    }
+    
+    // 下降（飞行模式）
+    if (Minecraft::Input::IsKeyPressed(Qt::Key_Shift) && m_Player->IsFlying()) {
+        m_Player->Move(glm::vec3(0, -1, 0), deltaTime, m_World.get());
+    }
+    
+    // 切换飞行模式
+    if (Minecraft::Input::IsKeyJustPressed(Qt::Key_F)) {
+        m_Player->ToggleFly();
+        LOG_INFO(m_Player->IsFlying() ? "Flying mode enabled" : "Flying mode disabled");
+    }
+    
+    // 更新玩家物理
+    m_Player->Update(deltaTime, m_World.get());
+    
+    // 同步摄像机位置（眼睛高度1.6米）
+    glm::vec3 eyePos = m_Player->GetPosition() + glm::vec3(0, 1.6f, 0);
+    m_Camera->SetPosition(eyePos);
+    
+    // 更新世界（动态加载/卸载chunks）
+    m_World->Update(m_Player->GetPosition());
     
     // ESC to exit
     if (Minecraft::Input::IsKeyJustPressed(Qt::Key_Escape)) {

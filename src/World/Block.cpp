@@ -20,9 +20,9 @@ void Block::InitializeBlockRegistry() {
         BlockType::Dirt, "Dirt", false, true, 2, 2, 2
     };
     
-    // Stone
+    // Stone - texture at (1,0)=1
     s_BlockRegistry[3] = {
-        BlockType::Stone, "Stone", false, true, 3, 3, 3
+        BlockType::Stone, "Stone", false, true, 1, 1, 1
     };
     
     // Wood
@@ -35,14 +35,14 @@ void Block::InitializeBlockRegistry() {
         BlockType::Leaves, "Leaves", true, true, 6, 6, 6
     };
     
-    // Sand
+    // Sand - texture at (0,11)=176
     s_BlockRegistry[6] = {
-        BlockType::Sand, "Sand", false, true, 7, 7, 7
+        BlockType::Sand, "Sand", false, true, 176, 176, 176
     };
     
-    // Water
+    // Water - texture at (12,13)=220
     s_BlockRegistry[7] = {
-        BlockType::Water, "Water", true, false, 8, 8, 8
+        BlockType::Water, "Water", true, false, 220, 220, 220
     };
     
     // Glass
