@@ -47,6 +47,9 @@ foreach(source IN LISTS MINECRAFT_SOURCES MINECRAFT_HEADERS)
     if(NOT source_path STREQUAL "")
         string(REPLACE "/" "\\" source_path_msvc "${source_path}")
         source_group("${source_path_msvc}" FILES "${source}")
+    else()
+        # 根目录文件：显式设置为空，不放在任何筛选器中
+        source_group("" FILES "${source}")
     endif()
 endforeach()
 

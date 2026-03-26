@@ -176,8 +176,18 @@ void Chunk::BuildMesh() {
     int visibleBlocks = 0;
     
     for (int x = 0; x < CHUNK_SIZE; ++x) {
-        for (int y = 0; y < CHUNK_HEIGHT; ++y) {
-            for (int z = 0; z < CHUNK_SIZE; ++z) {
+        for (int z = 0; z < CHUNK_SIZE; ++z) {
+            // 找到这一列的最高非空气方块
+            int maxY = CHUNK_HEIGHT - 1;
+            while (maxY >= 0 && GetBlock(x, maxY, z) == BlockType::Air) {
+                maxY--;
+            }
+            
+            // 如果整列都是空气，跳过
+            if (maxY < 0) continue;
+            
+            // 只遍历到地表高度
+            for (int y = 0; y <= maxY; ++y) {
                 BlockType block = GetBlock(x, y, z);
                 if (block == BlockType::Air) continue;
                 

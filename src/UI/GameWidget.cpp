@@ -63,6 +63,7 @@ void GameWidget::initializeGL() {
     
     // OpenGL settings
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);  // 使用LEQUAL而不是默认的LESS
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     
@@ -84,8 +85,8 @@ void GameWidget::initializeGL() {
                  std::to_string(m_BlockTexture->GetHeight()));
     }
     
-    // Create camera
-    m_Camera = std::make_unique<Minecraft::Camera>(70.0f, 16.0f / 9.0f, 0.1f, 1000.0f);
+    // Create camera (near=0.3, far=500 for better depth precision)
+    m_Camera = std::make_unique<Minecraft::Camera>(70.0f, 16.0f / 9.0f, 0.3f, 500.0f);
     m_Camera->SetPosition(glm::vec3(0.0f, 80.0f, 0.0f));
     LOG_INFO("Camera initialized");
     
