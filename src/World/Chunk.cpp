@@ -1,4 +1,5 @@
 #include "Chunk.h"
+#include "World.h"
 #include "../Utils/Logger.h"
 #include "../Utils/FastNoiseLite.h"
 #include "BlockRandom.h"
@@ -169,7 +170,7 @@ void Chunk::AddFace(const glm::vec3& pos, int face, BlockType blockType) {
     m_Indices.push_back(startIndex + 3);
 }
 
-void Chunk::BuildMesh() {
+void Chunk::BuildMesh(World* world) {
     m_Vertices.clear();
     m_Indices.clear();
     
@@ -191,15 +192,62 @@ void Chunk::BuildMesh() {
                 BlockType block = GetBlock(x, y, z);
                 if (block == BlockType::Air) continue;
                 
-                glm::vec3 pos(x + m_ChunkX * CHUNK_SIZE, y, z + m_ChunkZ * CHUNK_SIZE);
+                // 世界坐标
+                int worldX = x + m_ChunkX * CHUNK_SIZE;
+                int worldY = y;
+                int worldZ = z + m_ChunkZ * CHUNK_SIZE;
+                glm::vec3 pos(worldX, worldY, worldZ);
                 
-                // Check each face
-                if (GetBlock(x, y, z + 1) == BlockType::Air) AddFace(pos, 0, block);
-                if (GetBlock(x, y, z - 1) == BlockType::Air) AddFace(pos, 1, block);
-                if (GetBlock(x + 1, y, z) == BlockType::Air) AddFace(pos, 2, block);
-                if (GetBlock(x - 1, y, z) == BlockType::Air) AddFace(pos, 3, block);
-                if (GetBlock(x, y + 1, z) == BlockType::Air) AddFace(pos, 4, block);
-                if (GetBlock(x, y - 1, z) == BlockType::Air) AddFace(pos, 5, block);
+                // 检查每个面，使用World查询相邻方块（支持跨chunk）
+                BlockType neighbor;
+                
+                // Front (+Z)
+                if (world) {
+                    neighbor = world->GetBlock(worldX, worldY, worldZ + 1);
+                } else {
+                    neighbor = GetBlock(x, y, z + 1);
+                }
+                if (neighbor == BlockType::Air) AddFace(pos, 0, block);
+                
+                // Back (-Z)
+                if (world) {
+                    neighbor = world->GetBlock(worldX, worldY, worldZ - 1);
+                } else {
+                    neighbor = GetBlock(x, y, z - 1);
+                }
+                if (neighbor == BlockType::Air) AddFace(pos, 1, block);
+                
+                // Right (+X)
+                if (world) {
+                    neighbor = world->GetBlock(worldX + 1, worldY, worldZ);
+                } else {
+                    neighbor = GetBlock(x + 1, y, z);
+                }
+                if (neighbor == BlockType::Air) AddFace(pos, 2, block);
+                
+                // Left (-X)
+                if (world) {
+                    neighbor = world->GetBlock(worldX - 1, worldY, worldZ);
+                } else {
+                    neighbor = GetBlock(x - 1, y, z);
+                }
+                if (neighbor == BlockType::Air) AddFace(pos, 3, block);
+                
+                // Top (+Y)
+                if (world) {
+                    neighbor = world->GetBlock(worldX, worldY + 1, worldZ);
+                } else {
+                    neighbor = GetBlock(x, y + 1, z);
+                }
+                if (neighbor == BlockType::Air) AddFace(pos, 4, block);
+                
+                // Bottom (-Y)
+                if (world) {
+                    neighbor = world->GetBlock(worldX, worldY - 1, worldZ);
+                } else {
+                    neighbor = GetBlock(x, y - 1, z);
+                }
+                if (neighbor == BlockType::Air) AddFace(pos, 5, block);
                 
                 visibleBlocks++;
             }

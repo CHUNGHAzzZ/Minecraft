@@ -7,6 +7,8 @@
 
 namespace Minecraft {
 
+class World;  // Forward declaration
+
 constexpr int CHUNK_SIZE = 16;
 constexpr int CHUNK_HEIGHT = 256;
 constexpr int CHUNK_VOLUME = CHUNK_SIZE * CHUNK_HEIGHT * CHUNK_SIZE;
@@ -26,7 +28,7 @@ public:
     BlockType GetBlock(int x, int y, int z) const;
     
     void GenerateTerrain();
-    void BuildMesh();
+    void BuildMesh(World* world = nullptr);
     void Render();
     
     glm::ivec2 GetPosition() const { return glm::ivec2(m_ChunkX, m_ChunkZ); }

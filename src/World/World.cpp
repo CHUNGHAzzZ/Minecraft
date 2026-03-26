@@ -140,8 +140,23 @@ void World::UnloadDistantChunks(const ChunkPos& centerChunk) {
 void World::LoadChunk(const ChunkPos& pos) {
     auto chunk = std::make_unique<Chunk>(pos.x, pos.z);
     chunk->GenerateTerrain();
-    chunk->BuildMesh();
+    chunk->BuildMesh(this);  // 传入World指针以支持跨chunk查询
     m_LoadedChunks[pos] = std::move(chunk);
+    
+    // 重建相邻chunk的mesh（因为边界面可能需要更新）
+    ChunkPos neighbors[] = {
+        {pos.x + 1, pos.z},
+        {pos.x - 1, pos.z},
+        {pos.x, pos.z + 1},
+        {pos.x, pos.z - 1}
+    };
+    
+    for (const auto& neighborPos : neighbors) {
+        Chunk* neighborChunk = GetChunk(neighborPos);
+        if (neighborChunk) {
+            neighborChunk->BuildMesh(this);
+        }
+    }
 }
 
 } // namespace Minecraft
