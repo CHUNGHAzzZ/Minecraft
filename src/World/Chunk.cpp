@@ -266,9 +266,9 @@ void Chunk::BuildMesh(World* world) {
         return;
     }
     
-    LOG_DEBUG("Chunk (" + std::to_string(m_ChunkX) + ", " + std::to_string(m_ChunkZ) + 
-              ") mesh built: " + std::to_string(m_Vertices.size()) + " vertices, " + 
-              std::to_string(m_Indices.size()) + " indices");
+    // LOG_DEBUG("Chunk (" + std::to_string(m_ChunkX) + ", " + std::to_string(m_ChunkZ) + 
+    //           ") mesh built: " + std::to_string(m_Vertices.size()) + " vertices, " + 
+    //           std::to_string(m_Indices.size()) + " indices");
     
     // Create OpenGL buffers
     if (m_VAO == 0) {
