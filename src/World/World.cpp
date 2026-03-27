@@ -92,6 +92,62 @@ BlockType World::GetBlock(int x, int y, int z) {
     return chunk->GetBlock(localX, y, localZ);
 }
 
+bool World::SetBlock(int x, int y, int z, BlockType type) {
+    // Check Y bounds
+    if (y < 0 || y >= 256) {
+        return false;
+    }
+    
+    // Convert to chunk coordinates
+    int chunkX = static_cast<int>(std::floor(x / 16.0f));
+    int chunkZ = static_cast<int>(std::floor(z / 16.0f));
+    
+    ChunkPos pos(chunkX, chunkZ);
+    Chunk* chunk = GetChunk(pos);
+    
+    if (!chunk) {
+        return false;
+    }
+    
+    // Convert to local chunk coordinates
+    int localX = x - chunkX * 16;
+    int localZ = z - chunkZ * 16;
+    
+    // Handle negative coordinates
+    if (localX < 0) localX += 16;
+    if (localZ < 0) localZ += 16;
+    
+    // Set block
+    chunk->SetBlock(localX, y, localZ, type);
+    
+    // Rebuild mesh for this chunk
+    chunk->BuildMesh(this);
+    
+    // Rebuild adjacent chunks if block is on boundary
+    if (localX == 0) {
+        Chunk* neighbor = GetChunk(ChunkPos(chunkX - 1, chunkZ));
+        if (neighbor) neighbor->BuildMesh(this);
+    }
+    if (localX == 15) {
+        Chunk* neighbor = GetChunk(ChunkPos(chunkX + 1, chunkZ));
+        if (neighbor) neighbor->BuildMesh(this);
+    }
+    if (localZ == 0) {
+        Chunk* neighbor = GetChunk(ChunkPos(chunkX, chunkZ - 1));
+        if (neighbor) neighbor->BuildMesh(this);
+    }
+    if (localZ == 15) {
+        Chunk* neighbor = GetChunk(ChunkPos(chunkX, chunkZ + 1));
+        if (neighbor) neighbor->BuildMesh(this);
+    }
+    
+    return true;
+}
+
+bool World::BreakBlock(int x, int y, int z) {
+    return SetBlock(x, y, z, BlockType::Air);
+}
+
 void World::LoadChunksAroundPlayer(const ChunkPos& centerChunk) {
     int loadedCount = 0;
     

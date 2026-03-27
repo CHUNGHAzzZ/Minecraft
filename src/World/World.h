@@ -57,6 +57,12 @@ public:
     // Get block at world position
     BlockType GetBlock(int x, int y, int z);
     
+    // Set block at world position (returns true if successful)
+    bool SetBlock(int x, int y, int z, BlockType type);
+    
+    // Break block at world position (set to Air)
+    bool BreakBlock(int x, int y, int z);
+    
     // Get loaded chunk count
     size_t GetLoadedChunkCount() const { return m_LoadedChunks.size(); }
     
