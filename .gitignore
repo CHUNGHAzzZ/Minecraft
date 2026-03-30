@@ -30,7 +30,6 @@ build/win_run*
 # Compiled files
 *.o
 *.obj
-*.exe
 *.dll
 *.so
 *.dylib
