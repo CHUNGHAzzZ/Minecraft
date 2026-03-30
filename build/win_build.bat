@@ -75,7 +75,7 @@ echo ========================================
 echo Running CMake configuration...
 echo ========================================
 
-cmake -G "Visual Studio 17 2022" ^
+cmake -G "Visual Studio 18 2026" ^
       -DCMAKE_INSTALL_PREFIX="%INSTALL_DIR%" ^
       -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
       -DCMAKE_C_FLAGS=%CMAKE_C_FLAGS% ^

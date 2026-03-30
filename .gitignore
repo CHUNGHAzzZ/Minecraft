@@ -28,13 +28,7 @@ build/win_copy.bat
 build/win_run*
 
 # Compiled files
-*.o
 *.obj
-*.dll
-*.so
-*.dylib
-*.a
-*.lib
 
 # CMake
 CMakeCache.txt
