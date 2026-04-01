@@ -1,5 +1,6 @@
 #include "World.h"
 #include "Block.h"
+#include "WorldGeneration.h"
 #include "../Utils/Logger.h"
 #include <cmath>
 
@@ -195,7 +196,7 @@ void World::UnloadDistantChunks(const ChunkPos& centerChunk) {
 
 void World::LoadChunk(const ChunkPos& pos) {
     auto chunk = std::make_unique<Chunk>(pos.x, pos.z);
-    chunk->GenerateTerrain();
+    WorldGeneration::PopulateChunk(*chunk);
     chunk->BuildMesh(this);  // 传入World指针以支持跨chunk查询
     m_LoadedChunks[pos] = std::move(chunk);
     

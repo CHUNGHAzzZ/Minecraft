@@ -18,6 +18,7 @@ struct Vertex {
     glm::vec2 texCoord;
     float texIndex;
     float lighting;
+    glm::vec3 blockPos;
 };
 
 class Chunk {
@@ -27,7 +28,6 @@ public:
     void SetBlock(int x, int y, int z, BlockType type);
     BlockType GetBlock(int x, int y, int z) const;
     
-    void GenerateTerrain();
     void BuildMesh(World* world = nullptr);
     void Render();
     

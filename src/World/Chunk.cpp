@@ -1,8 +1,6 @@
 #include "Chunk.h"
 #include "World.h"
 #include "../Utils/Logger.h"
-#include "../Utils/FastNoiseLite.h"
-#include "BlockRandom.h"
 #include <GL/glew.h>
 #include <cmath>
 
@@ -56,83 +54,6 @@ BlockType Chunk::GetBlock(int x, int y, int z) const {
     return m_Blocks[GetBlockIndex(x, y, z)];
 }
 
-void Chunk::GenerateTerrain() {
-    // 创建噪声生成器
-    FastNoiseLite heightNoise;
-    heightNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    heightNoise.SetFrequency(0.01f);
-    heightNoise.SetSeed(1337);
-    
-    // 生物群系噪声（决定区域类型：草原、沙漠、石山）
-    FastNoiseLite biomeNoise;
-    biomeNoise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    biomeNoise.SetFrequency(0.003f);  // 更低频率 = 更大的生物群系区域
-    biomeNoise.SetSeed(7331);
-    
-    for (int x = 0; x < CHUNK_SIZE; ++x) {
-        for (int z = 0; z < CHUNK_SIZE; ++z) {
-            int worldX = m_ChunkX * CHUNK_SIZE + x;
-            int worldZ = m_ChunkZ * CHUNK_SIZE + z;
-            
-            // 计算地形高度（多层噪声）
-            float height = 0.0f;
-            height += heightNoise.GetNoise((float)worldX * 1.0f, (float)worldZ * 1.0f) * 30.0f;
-            height += heightNoise.GetNoise((float)worldX * 3.0f, (float)worldZ * 3.0f) * 10.0f;
-            height += heightNoise.GetNoise((float)worldX * 8.0f, (float)worldZ * 8.0f) * 3.0f;
-            
-            int terrainHeight = 64 + static_cast<int>(height);
-            terrainHeight = std::max(1, std::min(terrainHeight, CHUNK_HEIGHT - 1));
-            
-            // 计算生物群系类型（-1.0 到 1.0）
-            float biomeValue = biomeNoise.GetNoise((float)worldX, (float)worldZ);
-            
-            // 根据生物群系值决定区域类型
-            // biomeValue < -0.3: 沙漠 (Sand)
-            // -0.3 <= biomeValue < 0.3: 草原 (Grass)
-            // biomeValue >= 0.3: 石山 (Stone)
-            
-            BlockType surfaceBlock;
-            BlockType subsurfaceBlock;
-            BlockType deepBlock;
-            
-            if (biomeValue < -0.3f) {
-                // 沙漠生物群系
-                surfaceBlock = BlockType::Sand;
-                subsurfaceBlock = BlockType::Sand;
-                deepBlock = BlockType::Stone;
-            } else if (biomeValue < 0.3f) {
-                // 草原生物群系
-                surfaceBlock = BlockType::Grass;
-                subsurfaceBlock = BlockType::Dirt;
-                deepBlock = BlockType::Stone;
-            } else {
-                // 石山生物群系
-                surfaceBlock = BlockType::Stone;
-                subsurfaceBlock = BlockType::Stone;
-                deepBlock = BlockType::Stone;
-            }
-            
-            // 生成方块层
-            for (int y = 0; y < terrainHeight; ++y) {
-                BlockType blockType;
-                
-                if (y < terrainHeight - 5) {
-                    // 深层：石头
-                    blockType = deepBlock;
-                } else if (y < terrainHeight - 1) {
-                    // 次表层：根据生物群系
-                    blockType = subsurfaceBlock;
-                } else {
-                    // 表层：根据生物群系
-                    blockType = surfaceBlock;
-                }
-                
-                SetBlock(x, y, z, blockType);
-            }
-        }
-    }
-}
-
 bool Chunk::IsBlockVisible(int x, int y, int z) const {
     BlockType block = GetBlock(x, y, z);
     if (block == BlockType::Air) return false;
@@ -165,6 +86,7 @@ void Chunk::AddFace(const glm::vec3& pos, int face, BlockType blockType) {
         vertex.texCoord = glm::vec2((i == 1 || i == 2) ? 1.0f : 0.0f, (i > 1) ? 1.0f : 0.0f);
         vertex.texIndex = static_cast<float>(texIndex);
         vertex.lighting = lighting;
+        vertex.blockPos = pos;
         m_Vertices.push_back(vertex);
     }
     
@@ -184,27 +106,22 @@ void Chunk::BuildMesh(World* world) {
     
     for (int x = 0; x < CHUNK_SIZE; ++x) {
         for (int z = 0; z < CHUNK_SIZE; ++z) {
-            // 找到这一列的最高非空气方块
             int maxY = CHUNK_HEIGHT - 1;
             while (maxY >= 0 && GetBlock(x, maxY, z) == BlockType::Air) {
                 maxY--;
             }
             
-            // 如果整列都是空气，跳过
             if (maxY < 0) continue;
             
-            // 只遍历到地表高度
             for (int y = 0; y <= maxY; ++y) {
                 BlockType block = GetBlock(x, y, z);
                 if (block == BlockType::Air) continue;
                 
-                // 世界坐标
                 int worldX = x + m_ChunkX * CHUNK_SIZE;
                 int worldY = y;
                 int worldZ = z + m_ChunkZ * CHUNK_SIZE;
                 glm::vec3 pos(worldX, worldY, worldZ);
                 
-                // 检查每个面，使用World查询相邻方块（支持跨chunk）
                 BlockType neighbor;
                 
                 // Front (+Z)
@@ -300,6 +217,10 @@ void Chunk::BuildMesh(World* world) {
     // Lighting
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, lighting));
+
+    // Block position (for selection highlight)
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, blockPos));
     
     glBindVertexArray(0);
     

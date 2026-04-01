@@ -1,8 +1,11 @@
 #include "GameWidget.h"
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QWheelEvent>
 
 #include "../Core/Time.h"
+#include "../Core/Inventory.h"
 #include "../Core/Input.h"
 #include "../Core/Player.h"
 #include "../Render/Shader.h"
@@ -23,6 +26,7 @@ GameWidget::GameWidget(QWidget* parent)
 
 GameWidget::~GameWidget() {
     makeCurrent();
+    m_Inventory.reset();
     m_Player.reset();
     m_World.reset();
     m_BlockTexture.reset();
@@ -35,8 +39,8 @@ void GameWidget::SetupTimer() {
     auto* timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, [this]() {
         Minecraft::Time::Update();
-        Minecraft::Input::Update();
         UpdateGame();
+        Minecraft::Input::Update();
         update();
     });
     timer->start(16); // ~60 FPS
@@ -63,7 +67,7 @@ void GameWidget::initializeGL() {
     
     // OpenGL settings
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);  // 使用LEQUAL而不是默认的LESS
+    glDepthFunc(GL_LEQUAL);  // 浣跨敤LEQUAL鑰屼笉鏄粯璁ょ殑LESS
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     
@@ -94,6 +98,10 @@ void GameWidget::initializeGL() {
     m_Player = std::make_unique<Minecraft::Player>();
     m_Player->SetPosition(glm::vec3(0.0f, 80.0f, 0.0f));
     LOG_INFO("Player created");
+
+    // Create inventory/hotbar
+    m_Inventory = std::make_unique<Minecraft::Inventory>();
+    LOG_INFO("Inventory initialized");
     
     // Create world and initialize around player
     m_World = std::make_unique<Minecraft::World>();
@@ -120,6 +128,12 @@ void GameWidget::paintGL() {
     
     m_Shader->Bind();
     m_Shader->SetMat4("uViewProjection", m_Camera->GetViewProjectionMatrix());
+    m_Shader->SetInt("uHasSelection", m_BlockSelected ? 1 : 0);
+    m_Shader->SetVec3("uSelectedBlock", glm::vec3(
+        static_cast<float>(m_SelectedBlockX),
+        static_cast<float>(m_SelectedBlockY),
+        static_cast<float>(m_SelectedBlockZ)
+    ));
     
     // Bind block texture
     if (m_BlockTexture) {
@@ -132,13 +146,11 @@ void GameWidget::paintGL() {
     
     m_Shader->Unbind();
     
-    // Render block outline if a block is selected
-    if (m_BlockSelected) {
-        RenderBlockOutline();
-    }
-    
-    // Render crosshair (2D overlay)
-    RenderCrosshair();
+    // Render 2D HUD overlay
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing, false);
+    RenderCrosshair(painter);
+    RenderHotbar(painter);
 }
 
 void GameWidget::UpdateGame() {
@@ -146,7 +158,7 @@ void GameWidget::UpdateGame() {
     
     float deltaTime = Minecraft::Time::DeltaTime();
     
-    // 处理移动输入
+    // 澶勭悊绉诲姩杈撳叆
     glm::vec3 moveDir(0);
     if (Minecraft::Input::IsKeyPressed(Qt::Key_W)) {
         moveDir += m_Camera->GetFront();
@@ -161,7 +173,7 @@ void GameWidget::UpdateGame() {
         moveDir += m_Camera->GetRight();
     }
     
-    // 水平移动（忽略Y分量）
+    // 姘村钩绉诲姩锛堝拷鐣鍒嗛噺锛?
     if (!m_Player->IsFlying()) {
         moveDir.y = 0;
     }
@@ -170,38 +182,38 @@ void GameWidget::UpdateGame() {
         m_Player->Move(moveDir, deltaTime, m_World.get());
     }
     
-    // 跳跃
+    // 璺宠穬
     if (Minecraft::Input::IsKeyJustPressed(Qt::Key_Space)) {
         if (m_Player->IsFlying()) {
-            // 飞行模式：向上移动
+            // 椋炶妯″紡锛氬悜涓婄Щ鍔?
             m_Player->Move(glm::vec3(0, 1, 0), deltaTime, m_World.get());
         } else {
             m_Player->Jump();
         }
     }
     
-    // 下降（飞行模式）
+    // 涓嬮檷锛堥琛屾ā寮忥級
     if (Minecraft::Input::IsKeyPressed(Qt::Key_Shift) && m_Player->IsFlying()) {
         m_Player->Move(glm::vec3(0, -1, 0), deltaTime, m_World.get());
     }
     
-    // 切换飞行模式
+    // 鍒囨崲椋炶妯″紡
     if (Minecraft::Input::IsKeyJustPressed(Qt::Key_F)) {
         m_Player->ToggleFly();
         LOG_INFO(m_Player->IsFlying() ? "Flying mode enabled" : "Flying mode disabled");
     }
     
-    // 更新玩家物理
+    // 鏇存柊鐜╁鐗╃悊
     m_Player->Update(deltaTime, m_World.get());
     
-    // 同步摄像机位置（眼睛高度1.6米）
+    // 鍚屾鎽勫儚鏈轰綅缃紙鐪肩潧楂樺害1.6绫筹級
     glm::vec3 eyePos = m_Player->GetPosition() + glm::vec3(0, 1.6f, 0);
     m_Camera->SetPosition(eyePos);
     
-    // 更新世界（动态加载/卸载chunks）
+    // 鏇存柊涓栫晫锛堝姩鎬佸姞杞?鍗歌浇chunks锛?
     m_World->Update(m_Player->GetPosition());
     
-    // 更新方块选择
+    // 鏇存柊鏂瑰潡閫夋嫨
     UpdateBlockSelection();
     
     // ESC to exit
@@ -212,11 +224,27 @@ void GameWidget::UpdateGame() {
 }
 
 void GameWidget::keyPressEvent(QKeyEvent* event) {
+    if (!event->isAutoRepeat()) {
+        HandleHotbarKeyInput(event->key());
+    }
     Minecraft::Input::OnKeyPress(static_cast<Qt::Key>(event->key()));
 }
 
 void GameWidget::keyReleaseEvent(QKeyEvent* event) {
     Minecraft::Input::OnKeyRelease(static_cast<Qt::Key>(event->key()));
+}
+
+void GameWidget::wheelEvent(QWheelEvent* event) {
+    if (!m_Inventory) {
+        return;
+    }
+
+    const QPoint angleDelta = event->angleDelta();
+    if (angleDelta.y() > 0) {
+        m_Inventory->SelectPrevSlot();
+    } else if (angleDelta.y() < 0) {
+        m_Inventory->SelectNextSlot();
+    }
 }
 
 void GameWidget::mouseMoveEvent(QMouseEvent* event) {
@@ -253,7 +281,7 @@ void GameWidget::mouseMoveEvent(QMouseEvent* event) {
 
 void GameWidget::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
-        // 破坏方块
+        // 鐮村潖鏂瑰潡
         if (m_BlockSelected && m_World) {
             if (m_World->BreakBlock(m_SelectedBlockX, m_SelectedBlockY, m_SelectedBlockZ)) {
                 LOG_INFO("Block broken at (" + 
@@ -271,12 +299,12 @@ void GameWidget::UpdateBlockSelection() {
         return;
     }
     
-    // 执行射线检测
+    // 鎵ц灏勭嚎妫€娴?
     Minecraft::RaycastResult result = Minecraft::PerformRaycast(
         m_Camera->GetPosition(),
         m_Camera->GetFront(),
         m_World.get(),
-        5.0f  // 最大距离5个方块
+        5.0f  // 鏈€澶ц窛绂?涓柟鍧?
     );
     
     if (result.hit) {
@@ -289,80 +317,89 @@ void GameWidget::UpdateBlockSelection() {
     }
 }
 
-void GameWidget::RenderCrosshair() {
-    // 保存当前OpenGL状态
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    
-    // 设置2D正交投影
-    int w = width();
-    int h = height();
-    
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0, w, h, 0, -1, 1);  // 左上角为(0,0)
-    
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    
-    // 计算屏幕中心
-    float centerX = w / 2.0f;
-    float centerY = h / 2.0f;
-    
-    // 准星参数
-    float crosshairSize = 10.0f;  // 准星长度
-    float crosshairThickness = 2.0f;  // 准星粗细
-    
-    // 设置红色
-    glColor3f(1.0f, 0.0f, 0.0f);
-    
-    // 绘制准星（两条线）
-    glLineWidth(crosshairThickness);
-    glBegin(GL_LINES);
-    
-    // 水平线
-    glVertex2f(centerX - crosshairSize, centerY);
-    glVertex2f(centerX + crosshairSize, centerY);
-    
-    // 垂直线
-    glVertex2f(centerX, centerY - crosshairSize);
-    glVertex2f(centerX, centerY + crosshairSize);
-    
-    glEnd();
-    
-    // 恢复OpenGL状态
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+void GameWidget::RenderCrosshair(QPainter& painter) {
+    painter.setPen(QPen(QColor(255, 40, 40), 2));
+
+    const int centerX = width() / 2;
+    const int centerY = height() / 2;
+    const int crosshairSize = 8;
+
+    painter.drawLine(centerX - crosshairSize, centerY, centerX + crosshairSize, centerY);
+    painter.drawLine(centerX, centerY - crosshairSize, centerX, centerY + crosshairSize);
 }
+
+void GameWidget::RenderHotbar(QPainter& painter) {
+    if (!m_Inventory) {
+        return;
+    }
+
+    constexpr int slotCount = Minecraft::Inventory::HOTBAR_SIZE;
+    constexpr int slotSize = 52;
+    constexpr int slotGap = 8;
+    const int totalWidth = slotCount * slotSize + (slotCount - 1) * slotGap;
+    const int startX = (width() - totalWidth) / 2;
+    const int startY = height() - slotSize - 28;
+
+    painter.setFont(QFont("Consolas", 10, QFont::Bold));
+
+    for (int i = 0; i < slotCount; ++i) {
+        const int x = startX + i * (slotSize + slotGap);
+        const QRect slotRect(x, startY, slotSize, slotSize);
+        const bool selected = (i == m_Inventory->GetSelectedSlot());
+
+        painter.fillRect(slotRect, QColor(26, 26, 26, 180));
+        painter.setPen(selected ? QPen(QColor(255, 230, 120), 3) : QPen(QColor(205, 205, 205), 2));
+        painter.drawRect(slotRect);
+
+        const Minecraft::ItemStack& stack = m_Inventory->GetSlot(i);
+        if (!stack.IsEmpty()) {
+            const Minecraft::BlockData& block = Minecraft::Block::GetBlockData(stack.type);
+            painter.setPen(QColor(255, 255, 255));
+            painter.drawText(slotRect.adjusted(6, 6, -6, -22), Qt::AlignLeft | Qt::AlignTop, QString::fromStdString(block.name));
+
+            if (stack.count > 1) {
+                painter.setPen(QColor(255, 255, 255));
+                painter.drawText(slotRect.adjusted(0, 0, -4, -4), Qt::AlignRight | Qt::AlignBottom, QString::number(stack.count));
+            }
+        }
+
+        painter.setPen(QColor(245, 245, 245, 220));
+        painter.drawText(QRect(x, startY + slotSize + 3, slotSize, 16), Qt::AlignCenter, QString::number((i + 1) % 10));
+    }
+}
+
+void GameWidget::HandleHotbarKeyInput(int key) {
+    if (!m_Inventory) {
+        return;
+    }
+
+    if (key >= Qt::Key_1 && key <= Qt::Key_9) {
+        m_Inventory->SetSelectedSlot(key - Qt::Key_1);
+    }
+}
+
 
 void GameWidget::RenderBlockOutline() {
     if (!m_Camera) return;
     
-    // 禁用深度写入，但保持深度测试
+    // 绂佺敤娣卞害鍐欏叆锛屼絾淇濇寔娣卞害娴嬭瘯
     glDepthMask(GL_FALSE);
     glDisable(GL_CULL_FACE);
     
-    // 启用线框模式
+    // 鍚敤绾挎妯″紡
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glLineWidth(2.0f);
     
-    // 设置黑色描边
+    // 璁剧疆榛戣壊鎻忚竟
     glColor3f(0.0f, 0.0f, 0.0f);
     
-    // 方块位置（稍微扩大一点避免Z-fighting）
+    // 鏂瑰潡浣嶇疆锛堢◢寰墿澶т竴鐐归伩鍏峑-fighting锛?
     float x = m_SelectedBlockX - 0.001f;
     float y = m_SelectedBlockY - 0.001f;
     float z = m_SelectedBlockZ - 0.001f;
     float size = 1.002f;
     
-    // 使用固定管线绘制立方体
+    // 浣跨敤鍥哄畾绠＄嚎缁樺埗绔嬫柟浣?
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadMatrixf(&m_Camera->GetProjectionMatrix()[0][0]);
@@ -371,10 +408,10 @@ void GameWidget::RenderBlockOutline() {
     glPushMatrix();
     glLoadMatrixf(&m_Camera->GetViewMatrix()[0][0]);
     
-    // 绘制立方体的12条边
+    // 缁樺埗绔嬫柟浣撶殑12鏉¤竟
     glBegin(GL_LINES);
     
-    // 底面4条边
+    // 搴曢潰4鏉¤竟
     glVertex3f(x, y, z);
     glVertex3f(x + size, y, z);
     
@@ -387,7 +424,7 @@ void GameWidget::RenderBlockOutline() {
     glVertex3f(x, y, z + size);
     glVertex3f(x, y, z);
     
-    // 顶面4条边
+    // 椤堕潰4鏉¤竟
     glVertex3f(x, y + size, z);
     glVertex3f(x + size, y + size, z);
     
@@ -400,7 +437,7 @@ void GameWidget::RenderBlockOutline() {
     glVertex3f(x, y + size, z + size);
     glVertex3f(x, y + size, z);
     
-    // 4条竖边
+    // 4鏉＄珫杈?
     glVertex3f(x, y, z);
     glVertex3f(x, y + size, z);
     
@@ -415,7 +452,7 @@ void GameWidget::RenderBlockOutline() {
     
     glEnd();
     
-    // 恢复OpenGL状态
+    // 鎭㈠OpenGL鐘舵€?
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
