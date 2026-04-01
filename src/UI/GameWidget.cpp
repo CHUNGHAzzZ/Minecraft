@@ -69,7 +69,7 @@ void GameWidget::initializeGL() {
     
     // OpenGL settings
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);  // 浣跨敤LEQUAL鑰屼笉鏄粯璁ょ殑LESS
+    glDepthFunc(GL_LEQUAL);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     
