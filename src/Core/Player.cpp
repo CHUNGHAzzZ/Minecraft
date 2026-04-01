@@ -50,7 +50,7 @@ void Player::Update(float deltaTime, World* world) {
     }
 }
 
-void Player::Move(const glm::vec3& direction, float deltaTime, World* world) {
+void Player::Move(const glm::vec3& direction, float deltaTime, World* world, bool sprinting) {
     (void)world;
 
     if (glm::length(direction) < 0.001f) {
@@ -59,6 +59,7 @@ void Player::Move(const glm::vec3& direction, float deltaTime, World* world) {
 
     const PlayerConfig& cfg = GameConfig::Instance().GetPlayerConfig();
     glm::vec3 normalizedDir = glm::normalize(direction);
+    const float movementSpeed = cfg.walkSpeed * (sprinting ? cfg.sprintSpeedMultiplier : 1.0f);
 
     if (m_Flying) {
         m_Velocity += normalizedDir * cfg.walkSpeed * cfg.flySpeedMultiplier * deltaTime;
@@ -66,8 +67,8 @@ void Player::Move(const glm::vec3& direction, float deltaTime, World* world) {
         normalizedDir.y = 0.0f;
         if (glm::length(normalizedDir) > 0.0f) {
             normalizedDir = glm::normalize(normalizedDir);
-            m_Velocity.x += normalizedDir.x * cfg.walkSpeed * deltaTime;
-            m_Velocity.z += normalizedDir.z * cfg.walkSpeed * deltaTime;
+            m_Velocity.x += normalizedDir.x * movementSpeed * deltaTime;
+            m_Velocity.z += normalizedDir.z * movementSpeed * deltaTime;
         }
     }
 }

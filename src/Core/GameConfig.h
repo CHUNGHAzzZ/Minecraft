@@ -16,6 +16,7 @@ enum class MobType : std::size_t {
 struct PlayerConfig {
     // Movement
     float walkSpeed = 7.2f;             // Runtime-adjustable
+    float sprintSpeedMultiplier = 1.8f;
     float flySpeedMultiplier = 2.0f;    // Runtime-adjustable
     float jumpSpeed = 8.0f;             // Runtime-adjustable
 

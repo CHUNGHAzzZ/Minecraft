@@ -13,7 +13,7 @@ public:
     ~Player() = default;
 
     void Update(float deltaTime, World* world);
-    void Move(const glm::vec3& direction, float deltaTime, World* world);
+    void Move(const glm::vec3& direction, float deltaTime, World* world, bool sprinting = false);
     void Jump();
 
     void ToggleFly() { m_Flying = !m_Flying; }

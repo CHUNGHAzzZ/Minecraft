@@ -190,8 +190,9 @@ void GameWidget::UpdateGame() {
         moveDir.y = 0;
     }
     
+    const bool isSprinting = !m_Player->IsFlying() && Minecraft::Input::IsKeyPressed(Qt::Key_Shift);
     if (glm::length(moveDir) > 0) {
-        m_Player->Move(moveDir, deltaTime, m_World.get());
+        m_Player->Move(moveDir, deltaTime, m_World.get(), isSprinting);
     }
     
     if (Minecraft::Input::IsKeyJustPressed(Qt::Key_Space)) {
