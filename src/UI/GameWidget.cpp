@@ -170,7 +170,6 @@ void GameWidget::UpdateGame() {
     float deltaTime = Minecraft::Time::DeltaTime();
     UpdateDayNight(deltaTime);
     
-    // 澶勭悊绉诲姩杈撳叆
     glm::vec3 moveDir(0);
     if (Minecraft::Input::IsKeyPressed(Qt::Key_W)) {
         moveDir += m_Camera->GetFront();
@@ -185,7 +184,6 @@ void GameWidget::UpdateGame() {
         moveDir += m_Camera->GetRight();
     }
     
-    // 姘村钩绉诲姩锛堝拷鐣鍒嗛噺锛?
     if (!m_Player->IsFlying()) {
         moveDir.y = 0;
     }
@@ -194,38 +192,30 @@ void GameWidget::UpdateGame() {
         m_Player->Move(moveDir, deltaTime, m_World.get());
     }
     
-    // 璺宠穬
     if (Minecraft::Input::IsKeyJustPressed(Qt::Key_Space)) {
         if (m_Player->IsFlying()) {
-            // 椋炶妯″紡锛氬悜涓婄Щ鍔?
             m_Player->Move(glm::vec3(0, 1, 0), deltaTime, m_World.get());
         } else {
             m_Player->Jump();
         }
     }
     
-    // 涓嬮檷锛堥琛屾ā寮忥級
     if (Minecraft::Input::IsKeyPressed(Qt::Key_Shift) && m_Player->IsFlying()) {
         m_Player->Move(glm::vec3(0, -1, 0), deltaTime, m_World.get());
     }
     
-    // 鍒囨崲椋炶妯″紡
     if (Minecraft::Input::IsKeyJustPressed(Qt::Key_F)) {
         m_Player->ToggleFly();
         LOG_INFO(m_Player->IsFlying() ? "Flying mode enabled" : "Flying mode disabled");
     }
     
-    // 鏇存柊鐜╁鐗╃悊
     m_Player->Update(deltaTime, m_World.get());
     
-    // 鍚屾鎽勫儚鏈轰綅缃紙鐪肩潧楂樺害1.6绫筹級
     glm::vec3 eyePos = m_Player->GetPosition() + glm::vec3(0, 1.6f, 0);
     m_Camera->SetPosition(eyePos);
-    
-    // 鏇存柊涓栫晫锛堝姩鎬佸姞杞?鍗歌浇chunks锛?
+
     m_World->Update(m_Player->GetPosition());
-    
-    // 鏇存柊鏂瑰潡閫夋嫨
+
     UpdateBlockSelection();
     
     // ESC to exit
@@ -293,7 +283,6 @@ void GameWidget::mouseMoveEvent(QMouseEvent* event) {
 
 void GameWidget::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
-        // 鐮村潖鏂瑰潡
         if (m_BlockSelected && m_World) {
             if (m_World->BreakBlock(m_SelectedBlockX, m_SelectedBlockY, m_SelectedBlockZ)) {
                 LOG_INFO("Block broken at (" + 
@@ -311,12 +300,11 @@ void GameWidget::UpdateBlockSelection() {
         return;
     }
     
-    // 鎵ц灏勭嚎妫€娴?
     Minecraft::RaycastResult result = Minecraft::PerformRaycast(
         m_Camera->GetPosition(),
         m_Camera->GetFront(),
         m_World.get(),
-        5.0f  // 鏈€澶ц窛绂?涓柟鍧?
+        5.0f
     );
     
     if (result.hit) {
@@ -448,24 +436,19 @@ void GameWidget::HandleHotbarKeyInput(int key) {
 void GameWidget::RenderBlockOutline() {
     if (!m_Camera) return;
     
-    // 绂佺敤娣卞害鍐欏叆锛屼絾淇濇寔娣卞害娴嬭瘯
     glDepthMask(GL_FALSE);
     glDisable(GL_CULL_FACE);
     
-    // 鍚敤绾挎妯″紡
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glLineWidth(2.0f);
     
-    // 璁剧疆榛戣壊鎻忚竟
     glColor3f(0.0f, 0.0f, 0.0f);
     
-    // 鏂瑰潡浣嶇疆锛堢◢寰墿澶т竴鐐归伩鍏峑-fighting锛?
     float x = m_SelectedBlockX - 0.001f;
     float y = m_SelectedBlockY - 0.001f;
     float z = m_SelectedBlockZ - 0.001f;
     float size = 1.002f;
     
-    // 浣跨敤鍥哄畾绠＄嚎缁樺埗绔嬫柟浣?
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadMatrixf(&m_Camera->GetProjectionMatrix()[0][0]);
@@ -474,10 +457,8 @@ void GameWidget::RenderBlockOutline() {
     glPushMatrix();
     glLoadMatrixf(&m_Camera->GetViewMatrix()[0][0]);
     
-    // 缁樺埗绔嬫柟浣撶殑12鏉¤竟
     glBegin(GL_LINES);
     
-    // 搴曢潰4鏉¤竟
     glVertex3f(x, y, z);
     glVertex3f(x + size, y, z);
     
@@ -490,7 +471,6 @@ void GameWidget::RenderBlockOutline() {
     glVertex3f(x, y, z + size);
     glVertex3f(x, y, z);
     
-    // 椤堕潰4鏉¤竟
     glVertex3f(x, y + size, z);
     glVertex3f(x + size, y + size, z);
     
@@ -503,7 +483,6 @@ void GameWidget::RenderBlockOutline() {
     glVertex3f(x, y + size, z + size);
     glVertex3f(x, y + size, z);
     
-    // 4鏉＄珫杈?
     glVertex3f(x, y, z);
     glVertex3f(x, y + size, z);
     
@@ -518,7 +497,6 @@ void GameWidget::RenderBlockOutline() {
     
     glEnd();
     
-    // 鎭㈠OpenGL鐘舵€?
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
