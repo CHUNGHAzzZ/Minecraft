@@ -130,6 +130,13 @@ void GameWidget::resizeGL(int w, int h) {
 }
 
 void GameWidget::paintGL() {
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
+
     glClearColor(m_SkyColor.r, m_SkyColor.g, m_SkyColor.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     

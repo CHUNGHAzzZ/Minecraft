@@ -25,14 +25,14 @@ void Block::InitializeBlockRegistry() {
         BlockType::Stone, "Stone", false, true, 1, 1, 1
     };
     
-    // Wood - side:(1,4)=65, top/bottom:(1,5)=81
+    // Wood - temporary: all faces use (0,0)=0
     s_BlockRegistry[4] = {
-        BlockType::Wood, "Wood", false, true, 81, 65, 81
+        BlockType::Wood, "Wood", false, true, 21, 20, 21
     };
     
-    // Leaves - all faces:(3,4)=67
+    // Leaves - temporary: all faces use (0,0)=0
     s_BlockRegistry[5] = {
-        BlockType::Leaves, "Leaves", false, true, 67, 67, 67
+        BlockType::Leaves, "Leaves", false, true, 53, 53, 53
     };
     
     // Sand - texture at (0,11)=176
