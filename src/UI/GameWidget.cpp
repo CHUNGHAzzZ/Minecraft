@@ -3,6 +3,8 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QWheelEvent>
+#include <cmath>
+#include <glm/gtc/constants.hpp>
 
 #include "../Core/Time.h"
 #include "../Core/Inventory.h"
@@ -88,6 +90,13 @@ void GameWidget::initializeGL() {
                  std::to_string(m_BlockTexture->GetWidth()) + "x" + 
                  std::to_string(m_BlockTexture->GetHeight()));
     }
+
+    m_SunImage = QImage("Resource/Texture/sun.png");
+    if (m_SunImage.isNull()) {
+        LOG_WARNING("Failed to load sun texture: Resource/Texture/sun.png");
+    } else {
+        LOG_INFO("Sun texture loaded");
+    }
     
     // Create camera (near=0.3, far=500 for better depth precision)
     m_Camera = std::make_unique<Minecraft::Camera>(70.0f, 16.0f / 9.0f, 0.3f, 500.0f);
@@ -121,13 +130,14 @@ void GameWidget::resizeGL(int w, int h) {
 }
 
 void GameWidget::paintGL() {
-    glClearColor(13.0f/255.0f, 153.0f/255.0f, 255.0f/255.0f, 1.0f);
+    glClearColor(m_SkyColor.r, m_SkyColor.g, m_SkyColor.b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     if (!m_Shader || !m_Camera || !m_World) return;
     
     m_Shader->Bind();
     m_Shader->SetMat4("uViewProjection", m_Camera->GetViewProjectionMatrix());
+    m_Shader->SetFloat("uGlobalLight", m_GlobalLight);
     m_Shader->SetInt("uHasSelection", m_BlockSelected ? 1 : 0);
     m_Shader->SetVec3("uSelectedBlock", glm::vec3(
         static_cast<float>(m_SelectedBlockX),
@@ -149,6 +159,7 @@ void GameWidget::paintGL() {
     // Render 2D HUD overlay
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, false);
+    RenderSun(painter);
     RenderCrosshair(painter);
     RenderHotbar(painter);
 }
@@ -157,6 +168,7 @@ void GameWidget::UpdateGame() {
     if (!m_Camera || !m_World || !m_Player) return;
     
     float deltaTime = Minecraft::Time::DeltaTime();
+    UpdateDayNight(deltaTime);
     
     // 澶勭悊绉诲姩杈撳叆
     glm::vec3 moveDir(0);
@@ -326,6 +338,60 @@ void GameWidget::RenderCrosshair(QPainter& painter) {
 
     painter.drawLine(centerX - crosshairSize, centerY, centerX + crosshairSize, centerY);
     painter.drawLine(centerX, centerY - crosshairSize, centerX, centerY + crosshairSize);
+}
+
+void GameWidget::RenderSun(QPainter& painter) {
+    if (m_SunImage.isNull() || !m_Camera) {
+        return;
+    }
+
+    const glm::vec3 sunDir = GetSunDirection();
+    const glm::vec3 sunWorldPos = m_Camera->GetPosition() + sunDir * 220.0f;
+    const glm::vec4 clip = m_Camera->GetViewProjectionMatrix() * glm::vec4(sunWorldPos, 1.0f);
+    if (clip.w <= 0.001f) {
+        return;
+    }
+
+    const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+    if (ndc.z < -1.0f || ndc.z > 1.0f) {
+        return;
+    }
+    if (ndc.x < -1.2f || ndc.x > 1.2f || ndc.y < -1.2f || ndc.y > 1.2f) {
+        return;
+    }
+
+    const int centerX = static_cast<int>((ndc.x * 0.5f + 0.5f) * static_cast<float>(width()));
+    const int centerY = static_cast<int>((1.0f - (ndc.y * 0.5f + 0.5f)) * static_cast<float>(height()));
+    const int sunSize = 72;
+    painter.drawImage(QRect(centerX - sunSize / 2, centerY - sunSize / 2, sunSize, sunSize), m_SunImage);
+}
+
+glm::vec3 GameWidget::GetSunDirection() const {
+    const float angle = m_TimeOfDay * glm::two_pi<float>();
+    return glm::normalize(glm::vec3(std::cos(angle), std::sin(angle), -0.25f));
+}
+
+void GameWidget::UpdateDayNight(float deltaTime) {
+    if (m_DayLengthSeconds <= 0.0f) {
+        return;
+    }
+
+    m_TimeOfDay += deltaTime / m_DayLengthSeconds;
+    if (m_TimeOfDay >= 1.0f) {
+        m_TimeOfDay -= std::floor(m_TimeOfDay);
+    }
+
+    const float sunHeight = GetSunDirection().y;
+    const float daylight = glm::clamp((sunHeight + 0.15f) / 0.65f, 0.0f, 1.0f);
+    const float twilight = glm::clamp(1.0f - std::abs(sunHeight) * 4.5f, 0.0f, 1.0f);
+
+    m_GlobalLight = glm::mix(0.22f, 1.0f, daylight);
+
+    const glm::vec3 nightSky(0.02f, 0.03f, 0.08f);
+    const glm::vec3 daySky(0.05f, 0.60f, 0.98f);
+    const glm::vec3 sunsetSky(1.0f, 0.45f, 0.20f);
+    m_SkyColor = glm::mix(nightSky, daySky, daylight);
+    m_SkyColor = glm::mix(m_SkyColor, sunsetSky, twilight * 0.45f);
 }
 
 void GameWidget::RenderHotbar(QPainter& painter) {

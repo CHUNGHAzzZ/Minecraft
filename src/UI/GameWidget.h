@@ -1,7 +1,9 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 #include <QOpenGLWidget>
+#include <QImage>
 #include <QPainter>
 #include <QTimer>
 #include <memory>
@@ -37,8 +39,11 @@ private:
     void UpdateGame();
     void SetupTimer();
     void RenderCrosshair(QPainter& painter);
+    void RenderSun(QPainter& painter);
     void RenderHotbar(QPainter& painter);
     void HandleHotbarKeyInput(int key);
+    void UpdateDayNight(float deltaTime);
+    glm::vec3 GetSunDirection() const;
     void RenderBlockOutline();  // Legacy outline renderer (unused)
     void UpdateBlockSelection();
 
@@ -52,6 +57,13 @@ private:
     bool m_FirstMouse = true;
     float m_LastX = 0.0f;
     float m_LastY = 0.0f;
+
+    // Day-night cycle
+    float m_TimeOfDay = 0.35f;              // [0,1): 0.5 is noon, 0.0/1.0 is midnight
+    float m_DayLengthSeconds = 300.0f;      // Full cycle length in real-time seconds
+    float m_GlobalLight = 1.0f;             // Global world light multiplier
+    glm::vec3 m_SkyColor = glm::vec3(0.2f, 0.65f, 1.0f);
+    QImage m_SunImage;
 
     bool m_BlockSelected = false;
     int m_SelectedBlockX = 0;
