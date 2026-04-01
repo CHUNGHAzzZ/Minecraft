@@ -29,7 +29,8 @@ public:
     BlockType GetBlock(int x, int y, int z) const;
     
     void BuildMesh(World* world = nullptr);
-    void Render();
+    void RenderOpaque();
+    void RenderTransparent();
     
     glm::ivec2 GetPosition() const { return glm::ivec2(m_ChunkX, m_ChunkZ); }
     bool IsMeshBuilt() const { return m_MeshBuilt; }
@@ -43,12 +44,17 @@ private:
     int m_ChunkX, m_ChunkZ;
     std::array<BlockType, CHUNK_VOLUME> m_Blocks;
     
-    std::vector<Vertex> m_Vertices;
-    std::vector<unsigned int> m_Indices;
+    std::vector<Vertex> m_OpaqueVertices;
+    std::vector<unsigned int> m_OpaqueIndices;
+    std::vector<Vertex> m_TransparentVertices;
+    std::vector<unsigned int> m_TransparentIndices;
     
-    unsigned int m_VAO = 0;
-    unsigned int m_VBO = 0;
-    unsigned int m_EBO = 0;
+    unsigned int m_OpaqueVAO = 0;
+    unsigned int m_OpaqueVBO = 0;
+    unsigned int m_OpaqueEBO = 0;
+    unsigned int m_TransparentVAO = 0;
+    unsigned int m_TransparentVBO = 0;
+    unsigned int m_TransparentEBO = 0;
     
     bool m_MeshBuilt = false;
     bool m_IsEmpty = true;

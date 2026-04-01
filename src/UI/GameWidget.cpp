@@ -105,7 +105,7 @@ void GameWidget::initializeGL() {
     
     // Create player
     m_Player = std::make_unique<Minecraft::Player>();
-    m_Player->SetPosition(glm::vec3(0.0f, 80.0f, 0.0f));
+    m_Player->SetPosition(glm::vec3(0.0f, 180.0f, 0.0f));
     LOG_INFO("Player created");
 
     // Create inventory/hotbar
@@ -138,12 +138,6 @@ void GameWidget::paintGL() {
     m_Shader->Bind();
     m_Shader->SetMat4("uViewProjection", m_Camera->GetViewProjectionMatrix());
     m_Shader->SetFloat("uGlobalLight", m_GlobalLight);
-    m_Shader->SetInt("uHasSelection", m_BlockSelected ? 1 : 0);
-    m_Shader->SetVec3("uSelectedBlock", glm::vec3(
-        static_cast<float>(m_SelectedBlockX),
-        static_cast<float>(m_SelectedBlockY),
-        static_cast<float>(m_SelectedBlockZ)
-    ));
     
     // Bind block texture
     if (m_BlockTexture) {
@@ -151,8 +145,9 @@ void GameWidget::paintGL() {
         m_Shader->SetInt("uTexture", 0);
     }
     
-    // Render world
-    m_World->Render();
+    glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
+    m_World->RenderOpaque();
     
     m_Shader->Unbind();
     
@@ -215,9 +210,8 @@ void GameWidget::UpdateGame() {
     m_Camera->SetPosition(eyePos);
 
     m_World->Update(m_Player->GetPosition());
-
     UpdateBlockSelection();
-    
+
     // ESC to exit
     if (Minecraft::Input::IsKeyJustPressed(Qt::Key_Escape)) {
         LOG_INFO("User requested exit");
@@ -285,9 +279,9 @@ void GameWidget::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         if (m_BlockSelected && m_World) {
             if (m_World->BreakBlock(m_SelectedBlockX, m_SelectedBlockY, m_SelectedBlockZ)) {
-                LOG_INFO("Block broken at (" + 
-                         std::to_string(m_SelectedBlockX) + ", " + 
-                         std::to_string(m_SelectedBlockY) + ", " + 
+                LOG_INFO("Block broken at (" +
+                         std::to_string(m_SelectedBlockX) + ", " +
+                         std::to_string(m_SelectedBlockY) + ", " +
                          std::to_string(m_SelectedBlockZ) + ")");
             }
         }
@@ -299,14 +293,14 @@ void GameWidget::UpdateBlockSelection() {
         m_BlockSelected = false;
         return;
     }
-    
+
     Minecraft::RaycastResult result = Minecraft::PerformRaycast(
         m_Camera->GetPosition(),
         m_Camera->GetFront(),
         m_World.get(),
         5.0f
     );
-    
+
     if (result.hit) {
         m_BlockSelected = true;
         m_SelectedBlockX = result.blockX;
@@ -433,76 +427,3 @@ void GameWidget::HandleHotbarKeyInput(int key) {
 }
 
 
-void GameWidget::RenderBlockOutline() {
-    if (!m_Camera) return;
-    
-    glDepthMask(GL_FALSE);
-    glDisable(GL_CULL_FACE);
-    
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glLineWidth(2.0f);
-    
-    glColor3f(0.0f, 0.0f, 0.0f);
-    
-    float x = m_SelectedBlockX - 0.001f;
-    float y = m_SelectedBlockY - 0.001f;
-    float z = m_SelectedBlockZ - 0.001f;
-    float size = 1.002f;
-    
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadMatrixf(&m_Camera->GetProjectionMatrix()[0][0]);
-    
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadMatrixf(&m_Camera->GetViewMatrix()[0][0]);
-    
-    glBegin(GL_LINES);
-    
-    glVertex3f(x, y, z);
-    glVertex3f(x + size, y, z);
-    
-    glVertex3f(x + size, y, z);
-    glVertex3f(x + size, y, z + size);
-    
-    glVertex3f(x + size, y, z + size);
-    glVertex3f(x, y, z + size);
-    
-    glVertex3f(x, y, z + size);
-    glVertex3f(x, y, z);
-    
-    glVertex3f(x, y + size, z);
-    glVertex3f(x + size, y + size, z);
-    
-    glVertex3f(x + size, y + size, z);
-    glVertex3f(x + size, y + size, z + size);
-    
-    glVertex3f(x + size, y + size, z + size);
-    glVertex3f(x, y + size, z + size);
-    
-    glVertex3f(x, y + size, z + size);
-    glVertex3f(x, y + size, z);
-    
-    glVertex3f(x, y, z);
-    glVertex3f(x, y + size, z);
-    
-    glVertex3f(x + size, y, z);
-    glVertex3f(x + size, y + size, z);
-    
-    glVertex3f(x + size, y, z + size);
-    glVertex3f(x + size, y + size, z + size);
-    
-    glVertex3f(x, y, z + size);
-    glVertex3f(x, y + size, z + size);
-    
-    glEnd();
-    
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_CULL_FACE);
-}

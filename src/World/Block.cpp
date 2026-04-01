@@ -32,7 +32,7 @@ void Block::InitializeBlockRegistry() {
     
     // Leaves - all faces:(3,4)=67
     s_BlockRegistry[5] = {
-        BlockType::Leaves, "Leaves", true, true, 67, 67, 67
+        BlockType::Leaves, "Leaves", false, true, 67, 67, 67
     };
     
     // Sand - texture at (0,11)=176

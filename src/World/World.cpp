@@ -45,9 +45,15 @@ void World::Update(const glm::vec3& playerPos) {
     }
 }
 
-void World::Render() {
+void World::RenderOpaque() {
     for (auto& [pos, chunk] : m_LoadedChunks) {
-        chunk->Render();
+        chunk->RenderOpaque();
+    }
+}
+
+void World::RenderTransparent() {
+    for (auto& [pos, chunk] : m_LoadedChunks) {
+        chunk->RenderTransparent();
     }
 }
 
@@ -197,8 +203,9 @@ void World::UnloadDistantChunks(const ChunkPos& centerChunk) {
 void World::LoadChunk(const ChunkPos& pos) {
     auto chunk = std::make_unique<Chunk>(pos.x, pos.z);
     WorldGeneration::PopulateChunk(*chunk);
-    chunk->BuildMesh(this);  // 传入World指针以支持跨chunk查询
+    Chunk* chunkPtr = chunk.get();
     m_LoadedChunks[pos] = std::move(chunk);
+    chunkPtr->BuildMesh(this);
     
     // 重建相邻chunk的mesh（因为边界面可能需要更新）
     ChunkPos neighbors[] = {

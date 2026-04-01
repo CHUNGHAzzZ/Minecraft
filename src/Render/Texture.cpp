@@ -12,7 +12,7 @@ Texture::~Texture() {
 }
 
 bool Texture::LoadAsTextureArray(const std::string& path, int tileWidth, int tileHeight) {
-    stbi_set_flip_vertically_on_load(true);  // 纹理数组不翻�?
+    stbi_set_flip_vertically_on_load(false);
     
     unsigned char* data = stbi_load(path.c_str(), &m_Width, &m_Height, &m_Channels, 4);  // 强制RGBA
     if (!data) {
@@ -72,8 +72,8 @@ bool Texture::LoadAsTextureArray(const std::string& path, int tileWidth, int til
     // 设置纹理参数（像素风格）
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LOD, 4);
     
     stbi_image_free(data);

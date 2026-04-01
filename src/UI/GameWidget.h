@@ -44,7 +44,6 @@ private:
     void HandleHotbarKeyInput(int key);
     void UpdateDayNight(float deltaTime);
     glm::vec3 GetSunDirection() const;
-    void RenderBlockOutline();  // Legacy outline renderer (unused)
     void UpdateBlockSelection();
 
     std::unique_ptr<Minecraft::Shader> m_Shader;

@@ -26,6 +26,68 @@ static const glm::vec3 FACE_VERTICES[6][4] = {
     {{0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {0, 0, 1}}
 };
 
+namespace {
+bool IsTransparentBlock(BlockType type) {
+    return type != BlockType::Air && Block::IsTransparent(type);
+}
+
+bool ShouldRenderFace(BlockType block, BlockType neighbor) {
+    if (neighbor == BlockType::Air) {
+        return true;
+    }
+
+    const bool blockTransparent = IsTransparentBlock(block);
+    const bool neighborTransparent = IsTransparentBlock(neighbor);
+
+    if (!blockTransparent && neighborTransparent) {
+        return true;
+    }
+
+    if (blockTransparent && neighborTransparent && neighbor != block) {
+        return true;
+    }
+
+    return false;
+}
+
+void SetupMeshBuffers(unsigned int& vao,
+                      unsigned int& vbo,
+                      unsigned int& ebo,
+                      const std::vector<Vertex>& vertices,
+                      const std::vector<unsigned int>& indices) {
+    if (vao == 0) {
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+    }
+
+    glBindVertexArray(vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texIndex));
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, lighting));
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, blockPos));
+
+    glBindVertexArray(0);
+}
+}
+
 Chunk::Chunk(int chunkX, int chunkZ)
     : m_ChunkX(chunkX), m_ChunkZ(chunkZ)
 {
@@ -69,6 +131,8 @@ bool Chunk::IsBlockVisible(int x, int y, int z) const {
 
 void Chunk::AddFace(const glm::vec3& pos, int face, BlockType blockType) {
     const BlockData& data = Block::GetBlockData(blockType);
+    std::vector<Vertex>& vertices = m_OpaqueVertices;
+    std::vector<unsigned int>& indices = m_OpaqueIndices;
     
     uint8_t texIndex = data.sideTexture;
     if (face == 4) texIndex = data.topTexture;
@@ -78,29 +142,34 @@ void Chunk::AddFace(const glm::vec3& pos, int face, BlockType blockType) {
     if (face == 5) lighting = 0.5f;
     else if (face == 2 || face == 3) lighting = 0.8f;
     
-    unsigned int startIndex = m_Vertices.size();
+    unsigned int startIndex = vertices.size();
     
     for (int i = 0; i < 4; ++i) {
         Vertex vertex;
         vertex.position = pos + FACE_VERTICES[face][i];
         vertex.texCoord = glm::vec2((i == 1 || i == 2) ? 1.0f : 0.0f, (i > 1) ? 1.0f : 0.0f);
+        if (blockType == BlockType::Grass && face >= 0 && face <= 3) {
+            vertex.texCoord.y = 1.0f - vertex.texCoord.y;
+        }
         vertex.texIndex = static_cast<float>(texIndex);
         vertex.lighting = lighting;
         vertex.blockPos = pos;
-        m_Vertices.push_back(vertex);
+        vertices.push_back(vertex);
     }
     
-    m_Indices.push_back(startIndex);
-    m_Indices.push_back(startIndex + 1);
-    m_Indices.push_back(startIndex + 2);
-    m_Indices.push_back(startIndex);
-    m_Indices.push_back(startIndex + 2);
-    m_Indices.push_back(startIndex + 3);
+    indices.push_back(startIndex);
+    indices.push_back(startIndex + 1);
+    indices.push_back(startIndex + 2);
+    indices.push_back(startIndex);
+    indices.push_back(startIndex + 2);
+    indices.push_back(startIndex + 3);
 }
 
 void Chunk::BuildMesh(World* world) {
-    m_Vertices.clear();
-    m_Indices.clear();
+    m_OpaqueVertices.clear();
+    m_OpaqueIndices.clear();
+    m_TransparentVertices.clear();
+    m_TransparentIndices.clear();
     
     int visibleBlocks = 0;
     
@@ -130,7 +199,7 @@ void Chunk::BuildMesh(World* world) {
                 } else {
                     neighbor = GetBlock(x, y, z + 1);
                 }
-                if (neighbor == BlockType::Air) AddFace(pos, 0, block);
+                if (ShouldRenderFace(block, neighbor)) AddFace(pos, 0, block);
                 
                 // Back (-Z)
                 if (world) {
@@ -138,7 +207,7 @@ void Chunk::BuildMesh(World* world) {
                 } else {
                     neighbor = GetBlock(x, y, z - 1);
                 }
-                if (neighbor == BlockType::Air) AddFace(pos, 1, block);
+                if (ShouldRenderFace(block, neighbor)) AddFace(pos, 1, block);
                 
                 // Right (+X)
                 if (world) {
@@ -146,7 +215,7 @@ void Chunk::BuildMesh(World* world) {
                 } else {
                     neighbor = GetBlock(x + 1, y, z);
                 }
-                if (neighbor == BlockType::Air) AddFace(pos, 2, block);
+                if (ShouldRenderFace(block, neighbor)) AddFace(pos, 2, block);
                 
                 // Left (-X)
                 if (world) {
@@ -154,7 +223,7 @@ void Chunk::BuildMesh(World* world) {
                 } else {
                     neighbor = GetBlock(x - 1, y, z);
                 }
-                if (neighbor == BlockType::Air) AddFace(pos, 3, block);
+                if (ShouldRenderFace(block, neighbor)) AddFace(pos, 3, block);
                 
                 // Top (+Y)
                 if (world) {
@@ -162,7 +231,7 @@ void Chunk::BuildMesh(World* world) {
                 } else {
                     neighbor = GetBlock(x, y + 1, z);
                 }
-                if (neighbor == BlockType::Air) AddFace(pos, 4, block);
+                if (ShouldRenderFace(block, neighbor)) AddFace(pos, 4, block);
                 
                 // Bottom (-Y)
                 if (world) {
@@ -170,14 +239,14 @@ void Chunk::BuildMesh(World* world) {
                 } else {
                     neighbor = GetBlock(x, y - 1, z);
                 }
-                if (neighbor == BlockType::Air) AddFace(pos, 5, block);
+                if (ShouldRenderFace(block, neighbor)) AddFace(pos, 5, block);
                 
                 visibleBlocks++;
             }
         }
     }
     
-    if (m_Vertices.empty()) {
+    if (m_OpaqueVertices.empty() && m_TransparentVertices.empty()) {
         m_MeshBuilt = true;
         LOG_DEBUG("Chunk (" + std::to_string(m_ChunkX) + ", " + std::to_string(m_ChunkZ) + ") is empty");
         return;
@@ -187,51 +256,30 @@ void Chunk::BuildMesh(World* world) {
     //           ") mesh built: " + std::to_string(m_Vertices.size()) + " vertices, " + 
     //           std::to_string(m_Indices.size()) + " indices");
     
-    // Create OpenGL buffers
-    if (m_VAO == 0) {
-        glGenVertexArrays(1, &m_VAO);
-        glGenBuffers(1, &m_VBO);
-        glGenBuffers(1, &m_EBO);
+    if (!m_OpaqueVertices.empty()) {
+        SetupMeshBuffers(m_OpaqueVAO, m_OpaqueVBO, m_OpaqueEBO, m_OpaqueVertices, m_OpaqueIndices);
     }
-    
-    glBindVertexArray(m_VAO);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
-    glBufferData(GL_ARRAY_BUFFER, m_Vertices.size() * sizeof(Vertex), m_Vertices.data(), GL_STATIC_DRAW);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_Indices.size() * sizeof(unsigned int), m_Indices.data(), GL_STATIC_DRAW);
-    
-    // Position
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-    
-    // TexCoord
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
-    
-    // TexIndex
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texIndex));
-    
-    // Lighting
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, lighting));
 
-    // Block position (for selection highlight)
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, blockPos));
-    
-    glBindVertexArray(0);
+    if (!m_TransparentVertices.empty()) {
+        SetupMeshBuffers(m_TransparentVAO, m_TransparentVBO, m_TransparentEBO, m_TransparentVertices, m_TransparentIndices);
+    }
     
     m_MeshBuilt = true;
 }
 
-void Chunk::Render() {
-    if (!m_MeshBuilt || m_Indices.empty()) return;
-    
-    glBindVertexArray(m_VAO);
-    glDrawElements(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, 0);
+void Chunk::RenderOpaque() {
+    if (!m_MeshBuilt || m_OpaqueIndices.empty()) return;
+
+    glBindVertexArray(m_OpaqueVAO);
+    glDrawElements(GL_TRIANGLES, m_OpaqueIndices.size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+void Chunk::RenderTransparent() {
+    if (!m_MeshBuilt || m_TransparentIndices.empty()) return;
+
+    glBindVertexArray(m_TransparentVAO);
+    glDrawElements(GL_TRIANGLES, m_TransparentIndices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
 

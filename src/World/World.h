@@ -45,7 +45,8 @@ public:
     void Update(const glm::vec3& playerPos);
     
     // Render all loaded chunks
-    void Render();
+    void RenderOpaque();
+    void RenderTransparent();
     
     // Get render distance
     int GetRenderDistance() const { return m_RenderDistance; }
