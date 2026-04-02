@@ -1,22 +1,40 @@
 #pragma once
 
 #include "Chunk.h"
-#include <unordered_map>
-#include <vector>
+#include <climits>
+#include <condition_variable>
+#include <deque>
 #include <memory>
+#include <mutex>
+#include <thread>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 #include <glm/glm.hpp>
 
 namespace Minecraft {
 
+struct ChunkPos;
+
 // Chunk position in world space
 struct ChunkPos {
     int x, z;
-    
+
     ChunkPos(int x = 0, int z = 0) : x(x), z(z) {}
-    
+
     bool operator==(const ChunkPos& other) const {
         return x == other.x && z == other.z;
     }
+};
+
+struct ChunkRecord {
+    std::unique_ptr<Chunk> chunk;
+    bool meshDirty = false;
+};
+
+struct GeneratedChunkResult {
+    ChunkPos pos;
+    std::unique_ptr<Chunk> chunk;
 };
 
 } // namespace Minecraft
@@ -36,7 +54,7 @@ namespace Minecraft {
 class World {
 public:
     World();
-    ~World() = default;
+    ~World();
     
     // Initialize world around player spawn position
     void Initialize(const glm::vec3& playerPos);
@@ -71,12 +89,32 @@ public:
     static ChunkPos WorldToChunkPos(const glm::vec3& worldPos);
 
 private:
-    void LoadChunksAroundPlayer(const ChunkPos& centerChunk);
+    void QueueChunksAroundPlayer(const ChunkPos& centerChunk);
     void UnloadDistantChunks(const ChunkPos& centerChunk);
-    void LoadChunk(const ChunkPos& pos);
-    
-    std::unordered_map<ChunkPos, std::unique_ptr<Chunk>> m_LoadedChunks;
+    void QueueChunkLoad(const ChunkPos& pos);
+    void QueueChunkMesh(const ChunkPos& pos);
+    void MarkChunkAndNeighborsDirty(const ChunkPos& pos);
+    void ProcessChunkGeneration(int budget);
+    void ProcessChunkMeshing(int budget);
+    void GenerationWorkerMain();
+    bool IsChunkWithinRadius(const ChunkPos& pos, const ChunkPos& centerChunk, int radius) const;
+
+    std::unordered_map<ChunkPos, ChunkRecord> m_LoadedChunks;
+    std::deque<ChunkPos> m_MeshQueue;
+    std::deque<ChunkPos> m_GenerationQueue;
+    std::deque<GeneratedChunkResult> m_ReadyChunks;
+    std::unordered_set<ChunkPos> m_GenerationQueued;
+    std::unordered_set<ChunkPos> m_MeshQueued;
+    std::mutex m_GenerationMutex;
+    std::mutex m_ReadyChunksMutex;
+    std::condition_variable m_GenerationCv;
+    std::thread m_GenerationWorker;
+    bool m_ShuttingDown = false;
     int m_RenderDistance = 4;  // Render distance in chunks
+    int m_PreloadDistance = 2;
+    int m_UnloadDistanceBuffer = 2;
+    int m_ChunkGenerationBudget = 4;
+    int m_ChunkMeshingBudget = 2;
     ChunkPos m_LastPlayerChunk = {INT_MAX, INT_MAX};
 };
 

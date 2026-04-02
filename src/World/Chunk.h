@@ -3,11 +3,11 @@
 #include "Block.h"
 #include <glm/glm.hpp>
 #include <array>
-#include <vector>
 
 namespace Minecraft {
 
 class World;  // Forward declaration
+struct ChunkMeshData;
 
 constexpr int CHUNK_SIZE = 16;
 constexpr int CHUNK_HEIGHT = 256;
@@ -38,24 +38,20 @@ public:
 
 private:
     int GetBlockIndex(int x, int y, int z) const;
-    bool IsBlockVisible(int x, int y, int z) const;
-    void AddFace(const glm::vec3& pos, int face, BlockType blockType);
+    void ApplyMeshData(ChunkMeshData&& meshData);
     
     int m_ChunkX, m_ChunkZ;
     std::array<BlockType, CHUNK_VOLUME> m_Blocks;
-    
-    std::vector<Vertex> m_OpaqueVertices;
-    std::vector<unsigned int> m_OpaqueIndices;
-    std::vector<Vertex> m_TransparentVertices;
-    std::vector<unsigned int> m_TransparentIndices;
-    
+
     unsigned int m_OpaqueVAO = 0;
     unsigned int m_OpaqueVBO = 0;
     unsigned int m_OpaqueEBO = 0;
     unsigned int m_TransparentVAO = 0;
     unsigned int m_TransparentVBO = 0;
     unsigned int m_TransparentEBO = 0;
-    
+    unsigned int m_OpaqueIndexCount = 0;
+    unsigned int m_TransparentIndexCount = 0;
+
     bool m_MeshBuilt = false;
     bool m_IsEmpty = true;
 };

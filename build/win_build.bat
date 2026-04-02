@@ -71,11 +71,15 @@ if %CLEAR_BUILD_CACHE% == "ON" (
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 cd /d "%BUILD_DIR%"
 
+if exist "CMakeCache.txt" del /Q "CMakeCache.txt"
+if exist "CMakeFiles" rmdir /Q /S "CMakeFiles"
+
 echo ========================================
 echo Running CMake configuration...
 echo ========================================
 
-cmake -G "Visual Studio 18 2026" ^
+cmake -G "Visual Studio 17 2022" ^
+      -A x64 ^
       -DCMAKE_INSTALL_PREFIX="%INSTALL_DIR%" ^
       -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
       -DCMAKE_C_FLAGS=%CMAKE_C_FLAGS% ^
@@ -99,10 +103,18 @@ echo ========================================
 echo Building project...
 echo ========================================
 
-cmake --build . --target INSTALL --config %BUILD_CONFIG% -- /m:8
+cmake --build . --config %BUILD_CONFIG% -- /m:8
 
 if %ERRORLEVEL% NEQ 0 (
     echo Build FAILED!
+    pause
+    exit /b 1
+)
+
+cmake --install . --config %BUILD_CONFIG%
+
+if %ERRORLEVEL% NEQ 0 (
+    echo Install FAILED!
     pause
     exit /b 1
 )
