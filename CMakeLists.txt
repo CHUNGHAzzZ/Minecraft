@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Minecraft)
 
+option(MINECRAFT_LOG_CONSOLE_OUTPUT "Enable logger console output" ON)
+
 include (FindPkgConfig)
 include (CheckCCompilerFlag)
 include (CheckSymbolExists)
@@ -61,4 +63,3 @@ add_subdirectory(src)
 #if(BUILD_TEST)
   add_subdirectory(test)
 #endif()
-

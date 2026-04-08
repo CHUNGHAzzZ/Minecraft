@@ -5,7 +5,7 @@
 
 int main(int argc, char** argv) {
     // Initialize logger
-    Minecraft::Logger::Init("minecraft.log", true);
+    Minecraft::Logger::Init("minecraft.log");
     LOG_INFO("========== Minecraft Clone Starting ==========");
     
     // Setup OpenGL format

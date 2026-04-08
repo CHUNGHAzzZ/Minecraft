@@ -63,6 +63,11 @@ add_executable(Minecraft
     ${MINECRAFT_HEADERS}
 )
 
+target_compile_definitions(Minecraft
+    PRIVATE
+        MINECRAFT_LOG_CONSOLE_OUTPUT=$<IF:$<BOOL:${MINECRAFT_LOG_CONSOLE_OUTPUT}>,1,0>
+)
+
 # Remove AUTOMOC settings (we're using manual MOC)
 set_target_properties(Minecraft PROPERTIES
     AUTOMOC OFF

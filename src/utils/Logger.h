@@ -15,6 +15,10 @@
 
 namespace Minecraft {
 
+#ifndef MINECRAFT_LOG_CONSOLE_OUTPUT
+#define MINECRAFT_LOG_CONSOLE_OUTPUT 1
+#endif
+
 enum class LogLevel {
     Debug,
     Info,
@@ -32,7 +36,9 @@ struct LogMessage {
 
 class Logger {
 public:
-    static void Init(const std::string& logFile = "minecraft.log", bool consoleOutput = true, bool asyncMode = true);
+    static void Init(const std::string& logFile = "minecraft.log",
+                     bool consoleOutput = MINECRAFT_LOG_CONSOLE_OUTPUT,
+                     bool asyncMode = true);
     static void Shutdown();
     
     static void Debug(const std::string& message);
